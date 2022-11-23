@@ -258,6 +258,12 @@ class linEq():
 
 class interpolator():
     def __init__(self, x, f):
+        """A class to interpolate data.
+
+        Args:
+            x (array): x-values
+            f (array): f(x)
+        """
         #warning: x must be sorted
         self.x = x 
         self.f = f
@@ -318,17 +324,76 @@ class interpolator():
             return np.array(f_interp)
 
         return interpolation_function
+
+class functions:
+    def __init__ (self, func):
+        self.func = func
+
+    def parabolic_min(self, initial_guess, delta=0.1, stop_condition=1e-8):
+        func = self.func
+
+        #the initial three points to try
+        x0 = initial_guess
+        x1 = x0 + delta
+        x2 = x1 + delta
+        points = np.array([x0, x1, x2])
+        func_ls = func(points)
+
+        self.min_ls = []  #for debugging
+        self.xmin_ls = []
+
+        while True:
+            fmin_prev = min(func_ls) #used to compute stopping condition
+            self.min_ls.append(fmin_prev)  #for debugging
+            self.xmin_ls.append(points[np.argmin(func_ls)])
+
+            x0 = points[0]
+            x1 = points[1]
+            x2 = points[2]
+            y0 = func_ls[0]
+            y1 = func_ls[1]
+            y2 = func_ls[2]
+            x_new = (1/2)*((x2**2-x1**2)*y0 + (x0**2-x2**2)*y1 + (x1**2-x0**2)*y2)/((x2-x1)*y0 + (x0-x2)*y1 + (x1-x0)*y2)
+
+            points = np.append(points, x_new)
+            func_ls = np.append(func_ls, func(x_new))
+            max_index = np.argmax(func_ls)
+            points = points.tolist()
+            func_ls = func_ls.tolist()
+            points.pop(max_index)
+            func_ls.pop(max_index)
+            points = np.array(points)
+            func_ls = np.array(func_ls)
+
+            if abs(fmin_prev-min(func_ls)) < stop_condition:
+                return points[np.argmin(func_ls)]
+
 # %%
-x = np.linspace(0,2*np.pi,50)
-f = np.exp(-x)*(np.sin(10*x))
+# x = np.linspace(0,2*np.pi,50)
+# f = np.exp(-x)*(np.sin(10*x)) + 15
 
-interpolator_obj = interpolator(x, f)
-func = interpolator_obj.cubicspline()
+# interpolator_obj = interpolator(x, f)
+# func = interpolator_obj.cubicspline()
 
-x_intrp = np.linspace(0, 2*np.pi, 1000)
-f_intrp = func(x_intrp)
+# x_intrp = np.linspace(0, 2*np.pi, 1000)
+# f_intrp = func(x_intrp)
 
-plt.plot(x, f, 'x')
-plt.plot(x_intrp, f_intrp, '.')
-plt.show()
+# plt.plot(x, f, 'x')
+# plt.plot(x_intrp, f_intrp, '.')
+# plt.show()
+# %%
+def test(x):
+    return (x-5)*(x-7)*(x-8)*(x-11)
+
+func1 = functions(test)
+func1.parabolic_min(20)
+
+x = np.linspace(0,4*np.pi,100)
+for i in func1.xmin_ls:
+    plt.clf()
+    plt.plot(x, test(x))
+    plt.plot(i, test(i), 'o')
+    plt.ylim([-35,35])
+    plt.pause(0.01)
+    
 # %%
