@@ -376,10 +376,34 @@ class functions1d:
                 return points[np.argmin(func_ls)]
 
 class functions2d:
-    def __init__ (self, func):
-        self.func = func    
+    def __init__ (self, func2d):
+        def func2d_x(x):
+            #the 2d function as a function wrt. x only, with y=y_guess
+            return func2d(x, y_guess)
 
-            
+        def func2d_y(y):
+            #the 2d function as a function wrt. y only, with x=x_guess
+            return func2d(x_guess, y)
+        
+        self.func2d_x = func2d_x
+        self.func2d_y = func2d_y
+
+    def parabolic_min2d(self, x_guess, y_guess, max_iterations=100):
+        func2d_x = self.func2d_x
+        func2d_y = self.func2d_y
+        
+        iteration = 0
+        while True:
+            iteration += 1
+            #minimize 2d-function wrt. x with y=y_guess
+            func2d_x_obj = functions1d(func2d_x)
+            x_guess = func2d_x_obj.parabolic_min(x_guess)
+            #minimize 2d_function wrt. y with x=x_guess
+            func2d_y_obj = functions1d(func2d_y)
+            y_guess = func2d_y_obj.parabolic_min(y_guess)
+
+            if iteration > max_iterations:
+                return [x_guess, y_guess]
 
 # %%
 # x = np.linspace(0,2*np.pi,50)
@@ -398,7 +422,7 @@ class functions2d:
 def test(x):
     return np.sin(x)
 
-func1 = functions(test)
+func1 = functions1d(test)
 func1.parabolic_min(4.712)
 
 x = np.linspace(0,4*np.pi,100)
