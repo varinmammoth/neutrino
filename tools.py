@@ -325,12 +325,14 @@ class interpolator():
 
         return interpolation_function
 
-class functions:
+class functions1d:
     def __init__ (self, func):
         self.func = func
 
-    def parabolic_min(self, initial_guess, delta=0.1, stop_condition=1e-8):
+    def parabolic_min(self, initial_guess, delta=1e-3, max_iterations=50):
         func = self.func
+
+        iteration = 0
 
         #the initial three points to try
         x0 = initial_guess
@@ -339,12 +341,14 @@ class functions:
         points = np.array([x0, x1, x2])
         func_ls = func(points)
 
-        self.min_ls = []  #for debugging
+        self.fmin_ls = []  #for debugging
         self.xmin_ls = []
 
         while True:
-            fmin_prev = min(func_ls) #used to compute stopping condition
-            self.min_ls.append(fmin_prev)  #for debugging
+            iteration += 1
+            
+            max_prev = max(points) #used to compute stopping condition
+            self.fmin_ls.append(min(points))  #for debugging
             self.xmin_ls.append(points[np.argmin(func_ls)])
 
             x0 = points[0]
@@ -358,15 +362,24 @@ class functions:
             points = np.append(points, x_new)
             func_ls = np.append(func_ls, func(x_new))
             max_index = np.argmax(func_ls)
-            points = points.tolist()
-            func_ls = func_ls.tolist()
-            points.pop(max_index)
-            func_ls.pop(max_index)
-            points = np.array(points)
-            func_ls = np.array(func_ls)
+            points = np.delete(points, max_index)
+            func_ls = np.delete(func_ls, max_index)
 
-            if abs(fmin_prev-min(func_ls)) < stop_condition:
+            # if iteration > 3 and self.xmin_ls[-1] == self.xmin_ls[-2]:
+            #     return points[np.argmin(func_ls)]
+            # elif iteration == max_iterations:
+            #     print(f'Max number of iterations ({max_iterations}) reached for parabolic minimizer. Returning current x-value.')
+            #     return points[np.argmin(func_ls)]
+
+            if iteration == max_iterations:
+                print(f'Max number of iterations ({max_iterations}) reached for parabolic minimizer. Returning current x-value.')
                 return points[np.argmin(func_ls)]
+
+class functions2d:
+    def __init__ (self, func):
+        self.func = func    
+
+            
 
 # %%
 # x = np.linspace(0,2*np.pi,50)
@@ -383,17 +396,20 @@ class functions:
 # plt.show()
 # %%
 def test(x):
-    return (x-5)*(x-7)*(x-8)*(x-11)
+    return np.sin(x)
 
 func1 = functions(test)
-func1.parabolic_min(20)
+func1.parabolic_min(4.712)
 
 x = np.linspace(0,4*np.pi,100)
-for i in func1.xmin_ls:
-    plt.clf()
-    plt.plot(x, test(x))
-    plt.plot(i, test(i), 'o')
-    plt.ylim([-35,35])
-    plt.pause(0.01)
-    
+# for i in func1.xmin_ls:
+#     plt.clf()
+#     plt.plot(x, test(x))
+#     plt.plot(i, test(i), 'o')
+#     plt.ylim([-35,35])
+#     plt.pause(0.01)
+
+plt.plot(x, test(x))
+plt.plot(func1.xmin_ls, test(np.array(func1.xmin_ls)), '.')
+plt.show()
 # %%
