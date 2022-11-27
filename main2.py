@@ -111,7 +111,7 @@ def minimize1d(func, x0, x1, x2, delta, max_iterations=100):
             return np.array(x_list), np.array(y_list)
         elif iteration >= max_iterations:
             return np.array(x_list), np.array(y_list)
-
+#%%
 '''
 Testing the 1d parabolic minimizer
 '''
@@ -135,4 +135,82 @@ plt.ylim([-2,2])
 plt.grid()
 plt.show()
 
+# %%
+'''
+Applying the 1D parabolic minimizer wrt theta on NNL,
+keeping m fixed.
+'''
+#Make a new NNL function that takes in only theta as the argument.
+m = 2.4e-3
+NNL_wrt_theta = lambda theta: NNL(theta, m, bin_centers, count, unoscillated_flux)
+theta0 = 0.5
+theta1 = 0.6
+theta2 = 0.7
+x_list, y_list = minimize1d(NNL_wrt_theta, theta0, theta1, theta2, 1e-15)
+
+plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='r')
+plt.plot(np.linspace(0, np.pi/2, 1000), NNL_wrt_theta(np.linspace(0, np.pi/2, 1000)), '--')
+plt.xlim([x_list[-1]-0.1,x_list[-1]+0.1])
+plt.ylim([607.5, 620])
+plt.xlabel('Theta')
+plt.ylabel(f'NNL(theta, m={m})')
+plt.grid()
+plt.show()
+# %%
+'''
+Estimate the uncertainy in theta_min
+
+!!!!!
+Skip for now
+!!!!!
+'''
+# %%
+'''
+Make 2d minimizer using the parabolic method.
+'''
+#Going in theta direction first
+def minimize2d_NNL(theta_guess, m_guess, delta=1e-14, max_iterations = 50):
+    theta_list_final = [theta_guess]
+    m_list_final = [m_guess]
+    NNL_list_final = [NNL(theta_guess, m_guess, bin_centers, count, unoscillated_flux)]
+    
+    iteration = 0
+    while True:
+        iteration += 1
+
+        NNL_wrt_theta = lambda theta: NNL(theta, m_guess, bin_centers, count, unoscillated_flux)
+        theta_list, placeholder = minimize1d(NNL_wrt_theta, theta_guess, theta_guess+0.1, theta_guess+0.2, 1e-15)
+        theta_guess = theta_list[-1]
+        theta_list_final.append(theta_guess)
+        m_list_final.append(m_guess)
+        NNL_list_final.append(NNL(theta_guess, m_guess, bin_centers, count, unoscillated_flux))
+        
+        NNL_wrt_m = lambda m: NNL(theta_guess, m, bin_centers, count, unoscillated_flux)
+        m_list, placeholder = minimize1d(NNL_wrt_m, m_guess, m_guess+0.1e-4, m_guess+0.2e-4, 1e-15)
+        m_guess = m_list[-1]
+        theta_list_final.append(theta_guess)
+        m_list_final.append(m_guess)
+        NNL_list_final.append(NNL(theta_guess, m_guess, bin_centers, count, unoscillated_flux))
+
+        if iteration > 2 and abs(NNL_list_final[-1]-NNL_list_final[-2]) < delta:
+            return np.array(theta_list_final), np.array(m_list_final), np.array(NNL_list_final)
+        elif iteration >= max_iterations:
+            return np.array(theta_list_final), np.array(m_list_final), np.array(NNL_list_final)
+            
+theta_list, m_list, NNL_list = minimize2d_NNL(0.5, 2.4e-3)
+
+#Plotting the results
+theta_array = np.linspace(np.pi/4-0.1,np.pi/4+0.1, 500)
+m_array = np.linspace(m_list[-1]-0.5e-4,m_list[-1]+1e-4, 500)
+
+THETA_ARRAY, M_ARRAY = np.meshgrid(theta_array, m_array)
+NNL_contour = NNL(THETA_ARRAY, M_ARRAY, bin_centers, count, unoscillated_flux)
+plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
+plt.colorbar()
+plt.quiver(theta_list[:-1], m_list[:-1], theta_list[1:]-theta_list[:-1], m_list[1:]-m_list[:-1], scale_units='xy', angles='xy', scale=1, color='b')
+plt.xlabel('Theta')
+plt.ylabel('m')
+plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
+plt.ylim([m_list[-1]-0.5e-4,m_list[-1]+1e-4])
+plt.show()
 # %%
