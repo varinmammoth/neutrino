@@ -197,7 +197,13 @@ def minimize2d_NNL(theta_guess, m_guess, delta=1e-14, max_iterations = 50):
         elif iteration >= max_iterations:
             return np.array(theta_list_final), np.array(m_list_final), np.array(NNL_list_final)
             
+#Uncomment to try different initial guesses
+#1           
+# theta_list, m_list, NNL_list = minimize2d_NNL(0.5, 2.4e-3)
+# theta_list2, m_list2, NNL_list2 = minimize2d_NNL(0.9, 2e-3)
+#2
 theta_list, m_list, NNL_list = minimize2d_NNL(0.5, 2.4e-3)
+theta_list2, m_list2, NNL_list2 = minimize2d_NNL(0.5, 2.3e-3)
 
 #Plotting the results
 theta_array = np.linspace(np.pi/4-0.1,np.pi/4+0.1, 500)
@@ -208,6 +214,7 @@ NNL_contour = NNL(THETA_ARRAY, M_ARRAY, bin_centers, count, unoscillated_flux)
 plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
 plt.colorbar()
 plt.quiver(theta_list[:-1], m_list[:-1], theta_list[1:]-theta_list[:-1], m_list[1:]-m_list[:-1], scale_units='xy', angles='xy', scale=1, color='b')
+plt.quiver(theta_list2[:-1], m_list2[:-1], theta_list2[1:]-theta_list2[:-1], m_list2[1:]-m_list2[:-1], scale_units='xy', angles='xy', scale=1, color='g')
 plt.xlabel('Theta')
 plt.ylabel('m')
 plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
