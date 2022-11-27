@@ -372,23 +372,31 @@ class functions1d:
             #     return points[np.argmin(func_ls)]
 
             if iteration == max_iterations:
-                print(f'Max number of iterations ({max_iterations}) reached for parabolic minimizer. Returning current x-value.')
+                # print(f'Max number of iterations ({max_iterations}) reached for parabolic minimizer. Returning current x-value.')
                 return points[np.argmin(func_ls)]
 
 class functions2d:
-    def __init__ (self, func2d):
+    def __init__ (self, func2d, x_guess, y_guess):
+        self.x_guess = x_guess
+        self.y_guess = y_guess
+        self.func2d = func2d
+        
         def func2d_x(x):
             #the 2d function as a function wrt. x only, with y=y_guess
-            return func2d(x, y_guess)
+            return func2d(x, self.y_guess)
 
         def func2d_y(y):
             #the 2d function as a function wrt. y only, with x=x_guess
-            return func2d(x_guess, y)
+            return func2d(self.x_guess, y)
         
         self.func2d_x = func2d_x
         self.func2d_y = func2d_y
 
-    def parabolic_min2d(self, x_guess, y_guess, max_iterations=100):
+        self.xmin_ls = [x_guess]
+        self.ymin_ls = [y_guess]
+        
+
+    def parabolic_min2d(self, max_iterations=100):
         func2d_x = self.func2d_x
         func2d_y = self.func2d_y
         
@@ -396,14 +404,27 @@ class functions2d:
         while True:
             iteration += 1
             #minimize 2d-function wrt. x with y=y_guess
-            func2d_x_obj = functions1d(func2d_x)
-            x_guess = func2d_x_obj.parabolic_min(x_guess)
+            func2d_x_obj = functions1d(self.func2d_x)
+            self.x_guess = func2d_x_obj.parabolic_min(self.x_guess)
             #minimize 2d_function wrt. y with x=x_guess
-            func2d_y_obj = functions1d(func2d_y)
-            y_guess = func2d_y_obj.parabolic_min(y_guess)
+            func2d_y_obj = functions1d(self.func2d_y)
+            self.y_guess = func2d_y_obj.parabolic_min(self.y_guess)
 
+            def func2d_x(x):
+            #the 2d function as a function wrt. x only, with y=y_guess
+                return self.func2d(x, self.y_guess)
+
+            def func2d_y(y):
+            #the 2d function as a function wrt. y only, with x=x_guess
+                return self.func2d(self.x_guess, y)
+        
+            self.func2d_x = func2d_x
+            self.func2d_y = func2d_y
+
+            self.xmin_ls.append(self.x_guess)
+            self.ymin_ls.append(self.y_guess)
             if iteration > max_iterations:
-                return [x_guess, y_guess]
+                return [self.x_guess, self.y_guess]
 
 # %%
 # x = np.linspace(0,2*np.pi,50)
