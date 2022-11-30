@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import math as math
 import tools as tool
+
 # %%
 '''
 Read data and shift bins to center.
@@ -166,6 +167,23 @@ Estimate the uncertainy in theta_min
 Skip for now
 !!!!!
 '''
+def get_uncertainty(func, min, uncertainty_guess, delta):
+    uncer = [] #uncer[0]=positive uncer., uncer[1]=negative uncer.
+    
+    temp_func = lambda x: np.abs(func(x)-0.5)**2
+
+    min_plus = min + uncertainty_guess
+    min_minus = min - uncertainty_guess
+    x_ls, y_ls = minimize1d(temp_func, min_plus, min_plus+delta, min_plus+2*delta, 1e-5)
+    uncer.append(x_ls[-1])
+    x_ls, y_ls = minimize1d(temp_func, min_minus, min_minus-delta, min_minus-2*delta, 1e-5)
+    uncer.append(x_ls[-1])
+
+    return uncer
+
+#Test
+test_func = lambda x: 1.5*(x**2) + 1.5*x + 0.5
+uncer = get_uncertainty(test_func, -0.5, 1, 1e-2)
 # %%
 '''
 Make 2d minimizer using the parabolic method.
