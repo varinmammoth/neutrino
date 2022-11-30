@@ -141,7 +141,8 @@ Applying the 1D parabolic minimizer wrt theta on NNL,
 keeping m fixed.
 '''
 #Make a new NNL function that takes in only theta as the argument.
-m = 2.4e-3
+# m = 2.4e-3
+m = 0.0024
 NNL_wrt_theta = lambda theta: NNL(theta, m, bin_centers, count, unoscillated_flux)
 theta0 = 0.5
 theta1 = 0.6
@@ -219,5 +220,125 @@ plt.xlabel('Theta')
 plt.ylabel('m')
 plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
 plt.ylim([m_list[-1]-0.5e-4,m_list[-1]+1e-4])
+plt.show()
+
+print(f'The minima (theta, m) are at:') 
+print(f'({theta_list[-1]}, {m_list[-1]}) with NNL={NNL_list[-1]}')
+print(f'({theta_list2[-1]}, {m_list2[-1]}) with NNL={NNL_list2[-1]}')
+
+#Plot NNL as function of theta for fixed m=0.0023
+m_min = m_list[-1]
+plt.plot(np.linspace(0, np.pi/2, 1000), NNL(np.linspace(0, np.pi/2, 1000), m_min, bin_centers, count, unoscillated_flux),  '--')
+plt.plot(theta_list[-1], NNL(theta_list[-1], m_min, bin_centers, count, unoscillated_flux), 'o')
+plt.plot(theta_list2[-1], NNL(theta_list2[-1], m_min, bin_centers, count, unoscillated_flux), 'o')
+plt.xlabel('Theta')
+plt.ylabel(f'NNL(m={m_list2[-1]}')
+plt.xlim([np.pi/4-0.1, np.pi/4+0.1])
+plt.ylim([602.9,603.25])
+plt.grid()
+plt.show()
+# %%
+'''
+Try a different minimization method.
+Make a 2d gradient descent method.
+Gradients are estimated using a forward difference scheme.
+'''
+def gradient_descent2d_NNL(theta_guess, m_guess, h=1e-8, alpha=1e-10, delta=1e-14, max_iterations = 50):
+    theta_ls = [theta_guess]
+    m_ls = [m_guess]
+    NNL_ls = [NNL(theta_guess, m_guess, bin_centers, count, unoscillated_flux)]
+    
+    iteration = 0
+    while True:
+        x_prev = np.array([theta_ls[-1], m_ls[-1]])
+        
+        grad_theta = NNL(x_prev[0]+h, x_prev[1], bin_centers, count, unoscillated_flux) - NNL(x_prev[0]-h, x_prev[1], bin_centers, count, unoscillated_flux)
+        grad_theta = grad_theta/(2*h)
+        grad_m = NNL(x_prev[0], x_prev[1]+h, bin_centers, count, unoscillated_flux) - NNL(x_prev[0], x_prev[1]-h, bin_centers, count, unoscillated_flux)
+        grad_m = grad_m/(2*h)
+        grad_ls = np.array([grad_theta, grad_m])
+
+        x_new = x_prev - alpha*grad_ls
+
+        theta_ls.append(x_new[0])
+        m_ls.append(x_new[1])
+        NNL_ls.append(NNL(x_new[0], x_new[1], bin_centers, count, unoscillated_flux))
+
+        iteration += 1
+        print(-alpha*grad_ls)
+        if np.linalg.norm(x_new-x_prev) <= delta:
+            return np.array(theta_ls), np.array(m_ls), np.array(NNL_ls)
+        elif iteration > max_iterations:
+            return np.array(theta_ls), np.array(m_ls), np.array(NNL_ls)
+
+#Test the gradient descent method
+theta_ls_grad, m_ls_grad, NNL_ls_grad = gradient_descent2d_NNL(0.725, 2.34e-3,h=1e-9, alpha=5e-9, delta=1e-14, max_iterations = 500)
+
+#Plotting the results
+theta_array = np.linspace(np.pi/4-0.1,np.pi/4+0.1, 100)
+m_array = np.linspace(m_list[-1]-0.5e-4,m_list[-1]+1e-4, 100)
+
+THETA_ARRAY, M_ARRAY = np.meshgrid(theta_array, m_array)
+NNL_contour = NNL(THETA_ARRAY, M_ARRAY, bin_centers, count, unoscillated_flux)
+plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
+plt.colorbar()
+plt.quiver(theta_ls_grad[:-1], m_ls_grad[:-1], theta_ls_grad[1:]-theta_ls_grad[:-1], m_ls_grad[1:]-m_ls_grad[:-1], scale_units='xy', angles='xy', scale=1, color='b')
+# plt.quiver(theta_list2[:-1], m_list2[:-1], theta_list2[1:]-theta_list2[:-1], m_list2[1:]-m_list2[:-1], scale_units='xy', angles='xy', scale=1, color='g')
+plt.xlabel('Theta')
+plt.ylabel('m')
+plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
+plt.ylim([m_list[-1]-0.5e-4,m_list[-1]+1e-4])
+plt.show()
+# %%
+'''
+Make a 2d gradient descent function
+'''
+def grad_2d(func, parameters, x_guess, y_guess, alpha=1e-5, h=1e-5, delta=1e-14, max_iterations=100):
+    x_ls = [x_guess]
+    y_ls = [y_guess]
+    f_ls = [func(x_guess,y_guess,*parameters)]
+
+    iteration = 0
+    while True:
+        xy_cur = np.array([x_ls[-1], y_ls[-1]])
+        x = xy_cur[0]
+        y = xy_cur[1]
+
+        grad_x = (func(x+h,y,*parameters) - func(x,y,*parameters))/h
+        grad_y = (func(x,y+h,*parameters) - func(x,y,*parameters))/h
+        grad = np.array([grad_x, grad_y])
+
+        xy_next = xy_cur - alpha*grad
+
+        x_ls.append(xy_next[0])
+        y_ls.append(xy_next[1])
+        f_ls.append(func(xy_next[0], xy_next[1], *parameters))
+
+        iteration += 1
+
+        if iteration >= max_iterations:
+            return np.array(x_ls), np.array(y_ls), np.array(f_ls)
+        elif np.linalg.norm(xy_cur-xy_next) <= delta:
+            return np.array(x_ls), np.array(y_ls), np.array(f_ls)
+
+'''
+Test the function
+'''
+def test_function(x,y,a,b,c):
+    return a*(np.sin(x)**2) + b*(np.cos(y)**2) + c
+
+x_ls_grad, y_ls_grad, f_ls_grad = grad_2d(test_function, [2,5,1], 6, 6, alpha=1e-3, h=1e-5, delta=1e-14, max_iterations=5000)
+
+#Plotting the results
+x_array = np.linspace(4,8, 100)
+y_array = np.linspace(4,8, 100) 
+
+X_ARRAY, Y_ARRAY = np.meshgrid(x_array, y_array)
+F_COUNTOUR = test_function(X_ARRAY, Y_ARRAY, *[2,5,1])
+plt.contourf(X_ARRAY, Y_ARRAY, F_COUNTOUR, 20, cmap='RdGy')
+plt.colorbar()
+plt.quiver(x_ls_grad[:-1], y_ls_grad[:-1], x_ls_grad[1:]-x_ls_grad[:-1], y_ls_grad[1:]-y_ls_grad[:-1], scale_units='xy', angles='xy', scale=1, color='b')
+plt.xlabel('x')
+plt.ylabel('y')
 plt.show()
 # %%
