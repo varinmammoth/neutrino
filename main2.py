@@ -47,6 +47,7 @@ def NNL(theta, m, E_array, count_array, unoscillated_flux_array):
     for i in range(0,n):
         lambda_i = mu_mu_prob(E_array[i], m, theta)*unoscillated_flux_array[i]
         NNL += lambda_i - count_array[i]*np.log(lambda_i) + np.log(math.factorial(count_array[i]))
+        # NNL += lambda_i - count_array[i]*np.log(lambda_i) 
     return NNL
 
 m = 2.4e-3  #fixing m
@@ -168,12 +169,15 @@ Skip for now
 # %%
 '''
 Make 2d minimizer using the parabolic method.
+Taking the first step in the theta direction.
 '''
 #Going in theta direction first
 def minimize2d_NNL(theta_guess, m_guess, delta=1e-14, max_iterations = 50):
     theta_list_final = [theta_guess]
     m_list_final = [m_guess]
     NNL_list_final = [NNL(theta_guess, m_guess, bin_centers, count, unoscillated_flux)]
+
+    parabola_list_final = []
     
     iteration = 0
     while True:
@@ -239,58 +243,6 @@ plt.grid()
 plt.show()
 # %%
 '''
-Try a different minimization method.
-Make a 2d gradient descent method.
-Gradients are estimated using a forward difference scheme.
-'''
-def gradient_descent2d_NNL(theta_guess, m_guess, h=1e-8, alpha=1e-10, delta=1e-14, max_iterations = 50):
-    theta_ls = [theta_guess]
-    m_ls = [m_guess]
-    NNL_ls = [NNL(theta_guess, m_guess, bin_centers, count, unoscillated_flux)]
-    
-    iteration = 0
-    while True:
-        x_prev = np.array([theta_ls[-1], m_ls[-1]])
-        
-        grad_theta = NNL(x_prev[0]+h, x_prev[1], bin_centers, count, unoscillated_flux) - NNL(x_prev[0]-h, x_prev[1], bin_centers, count, unoscillated_flux)
-        grad_theta = grad_theta/(2*h)
-        grad_m = NNL(x_prev[0], x_prev[1]+h, bin_centers, count, unoscillated_flux) - NNL(x_prev[0], x_prev[1]-h, bin_centers, count, unoscillated_flux)
-        grad_m = grad_m/(2*h)
-        grad_ls = np.array([grad_theta, grad_m])
-
-        x_new = x_prev - alpha*grad_ls
-
-        theta_ls.append(x_new[0])
-        m_ls.append(x_new[1])
-        NNL_ls.append(NNL(x_new[0], x_new[1], bin_centers, count, unoscillated_flux))
-
-        iteration += 1
-        print(-alpha*grad_ls)
-        if np.linalg.norm(x_new-x_prev) <= delta:
-            return np.array(theta_ls), np.array(m_ls), np.array(NNL_ls)
-        elif iteration > max_iterations:
-            return np.array(theta_ls), np.array(m_ls), np.array(NNL_ls)
-
-#Test the gradient descent method
-theta_ls_grad, m_ls_grad, NNL_ls_grad = gradient_descent2d_NNL(0.725, 2.34e-3,h=1e-9, alpha=5e-9, delta=1e-14, max_iterations = 500)
-
-#Plotting the results
-theta_array = np.linspace(np.pi/4-0.1,np.pi/4+0.1, 100)
-m_array = np.linspace(m_list[-1]-0.5e-4,m_list[-1]+1e-4, 100)
-
-THETA_ARRAY, M_ARRAY = np.meshgrid(theta_array, m_array)
-NNL_contour = NNL(THETA_ARRAY, M_ARRAY, bin_centers, count, unoscillated_flux)
-plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
-plt.colorbar()
-plt.quiver(theta_ls_grad[:-1], m_ls_grad[:-1], theta_ls_grad[1:]-theta_ls_grad[:-1], m_ls_grad[1:]-m_ls_grad[:-1], scale_units='xy', angles='xy', scale=1, color='b')
-# plt.quiver(theta_list2[:-1], m_list2[:-1], theta_list2[1:]-theta_list2[:-1], m_list2[1:]-m_list2[:-1], scale_units='xy', angles='xy', scale=1, color='g')
-plt.xlabel('Theta')
-plt.ylabel('m')
-plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
-plt.ylim([m_list[-1]-0.5e-4,m_list[-1]+1e-4])
-plt.show()
-# %%
-'''
 Make a 2d gradient descent function
 '''
 def grad_2d(func, parameters, x_guess, y_guess, alpha=1e-5, h=1e-5, delta=1e-14, max_iterations=100):
@@ -327,7 +279,7 @@ Test the function
 def test_function(x,y,a,b,c):
     return a*(np.sin(x)**2) + b*(np.cos(y)**2) + c
 
-x_ls_grad, y_ls_grad, f_ls_grad = grad_2d(test_function, [2,5,1], 6, 6, alpha=1e-3, h=1e-5, delta=1e-14, max_iterations=5000)
+x_ls_grad, y_ls_grad, f_ls_grad = grad_2d(test_function, [2,5,1], 5, 6, alpha=1e-3, h=1e-5, delta=1e-14, max_iterations=5000)
 
 #Plotting the results
 x_array = np.linspace(4,8, 100)
@@ -342,3 +294,33 @@ plt.xlabel('x')
 plt.ylabel('y')
 plt.show()
 # %%
+'''
+Apply the 2D gradient descent on NNL.
+'''
+#Minimising
+params = [bin_centers, count, unoscillated_flux]
+theta_ls_grad, m_ls_grad, NNL_ls_grad = grad_2d(NNL, params, 0.775, 2.32e-3, alpha=1e-5, h=1e-5, delta=1e-14, max_iterations=100)
+
+#Plotting the results
+#Plotting the results
+theta_array = np.linspace(np.pi/4-0.1,np.pi/4+0.1, 500)
+m_array = np.linspace(m_list[-1]-0.5e-4,m_list[-1]+1e-4, 500)
+
+THETA_ARRAY, M_ARRAY = np.meshgrid(theta_array, m_array)
+NNL_contour = NNL(THETA_ARRAY, M_ARRAY, bin_centers, count, unoscillated_flux)
+plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
+plt.colorbar()
+# plt.quiver(theta_ls_grad[:-1], m_ls_grad[:-1], theta_ls_grad[1:]-theta_ls_grad[:-1], m_ls_grad[1:]-m_ls_grad[:-1], scale_units='xy', angles='xy', scale=1, color='b')
+plt.plot(theta_ls_grad, m_ls_grad)
+plt.xlabel('Theta')
+plt.ylabel('m')
+plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
+plt.ylim([m_list[-1]-0.5e-4,m_list[-1]+1e-4])
+plt.show()
+# %%
+'''
+Try Newton Method
+'''
+def annealing2d(func, params, x_guess, y_guess):
+    T_ls = np.arange(0, 300, 1)
+    T_ls = np.flip(T_ls)
