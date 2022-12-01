@@ -78,6 +78,22 @@ plt.colorbar()
 plt.show()
 # %%
 '''
+Code for Lagrange polynomial. Used to estimate error of minimum according to parabolic approximation of the NNL.
+'''
+def lagrange_poly(x, x_data, y_data, n):
+    
+    sum = 0
+    
+    for i in range(0,n+1):
+        product = 1
+        for j in range(0,n+1):
+            if i != j:
+                product *= (x-x_data[j])/(x_data[i]-x_data[j])
+        sum += product*y_data[i]  
+        
+    return sum
+
+'''
 Make 1D minimizer using the parabolic method.
 '''
 def minimize1d(func, x0, x1, x2, delta, max_iterations=100):
@@ -113,6 +129,34 @@ def minimize1d(func, x0, x1, x2, delta, max_iterations=100):
             return np.array(x_list), np.array(y_list)
         elif iteration >= max_iterations:
             return np.array(x_list), np.array(y_list)
+
+def secant(func, x1, x2):
+        while True:
+            f1 = func(x1)
+            f2 = func(x2)
+            temp = x1
+            x1 = x1-(x1-x2)*f1/(f1-f2)
+            x2 = temp
+            if abs(f1) < 1e-6:
+                return x1
+
+def get_uncertainty(func, xmin, uncertainty_guess):
+    uncer_func = lambda x: func(x) - (func(xmin)+0.5)
+    uncer_plus = secant(uncer_func, xmin+uncertainty_guess, xmin+1.1*uncertainty_guess)
+    uncer_minus = secant(uncer_func, xmin-uncertainty_guess, xmin-1.1*uncertainty_guess)
+    uncer = [uncer_plus-xmin, xmin-uncer_minus]
+
+    return uncer
+
+def get_uncertainty_parabola(func, xmin, uncertainty_guess):
+    x_ls = [xmin, xmin-1e-5, xmin+1e-5]
+    y_ls = [func(xmin), func(xmin-1e-5), func(xmin+1e-5)]
+    uncer_func = lambda x: lagrange_poly(x, x_ls, y_ls, 2) - (func(xmin)+0.5)
+    uncer_plus = secant(uncer_func, xmin+uncertainty_guess, xmin+1.1*uncertainty_guess)
+    uncer_minus = secant(uncer_func, xmin-uncertainty_guess, xmin-1.1*uncertainty_guess)
+    uncer = [uncer_plus-xmin, xmin-uncer_minus]
+
+    return uncer
 #%%
 '''
 Testing the 1d parabolic minimizer
@@ -123,13 +167,16 @@ y = lambda x: (x-5)*(x-6)*(x-7)*(x-8)
 x0 = 4
 x1 = 4.1
 x2 = 4.2
-x_list, y_list = minimize1d(y, x0, x1, x2, 1e-15)
+x_list, y_list= minimize1d(y, x0, x1, x2, 1e-15)
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='r')
+uncertainty = get_uncertainty(y, x_list[-1], 0.1)
+plt.plot(x_list[-1]+uncertainty[0], y(x_list[-1]+uncertainty[0]), 'o')
+plt.plot(x_list[-1]-uncertainty[1], y(x_list[-1]-uncertainty[1]), 'o')
 
 x0 = 10
 x1 = 10.1
 x2 = 10.2
-x_list, y_list = minimize1d(y, x0, x1, x2, 1e-15)
+x_list, y_list= minimize1d(y, x0, x1, x2, 1e-15)
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='r')
 
 plt.plot(x, y(x), '--', c='grey')
@@ -150,6 +197,11 @@ theta0 = 0.5
 theta1 = 0.6
 theta2 = 0.7
 x_list, y_list = minimize1d(NNL_wrt_theta, theta0, theta1, theta2, 1e-15)
+#Uncertainty directly from NNL
+uncertainty = get_uncertainty(NNL_wrt_theta, x_list[-1], 0.01)
+print(f'The minimum theta is {x_list[-1]} with uncertainty +- {uncertainty[0]}')
+#Uncertainty from parabola near minimum
+# uncertainty_parabola = get_uncertainty_parabola(NNL_wrt_theta, x_list[-1], 0.01)
 
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='r')
 plt.plot(np.linspace(0, np.pi/2, 1000), NNL_wrt_theta(np.linspace(0, np.pi/2, 1000)), '--')
@@ -159,31 +211,6 @@ plt.xlabel('Theta')
 plt.ylabel(f'NNL(theta, m={m})')
 plt.grid()
 plt.show()
-# %%
-'''
-Estimate the uncertainy in theta_min
-
-!!!!!
-Skip for now
-!!!!!
-'''
-def get_uncertainty(func, min, uncertainty_guess, delta):
-    uncer = [] #uncer[0]=positive uncer., uncer[1]=negative uncer.
-    
-    temp_func = lambda x: np.abs(func(x)-0.5)**2
-
-    min_plus = min + uncertainty_guess
-    min_minus = min - uncertainty_guess
-    x_ls, y_ls = minimize1d(temp_func, min_plus, min_plus+delta, min_plus+2*delta, 1e-5)
-    uncer.append(x_ls[-1])
-    x_ls, y_ls = minimize1d(temp_func, min_minus, min_minus-delta, min_minus-2*delta, 1e-5)
-    uncer.append(x_ls[-1])
-
-    return uncer
-
-#Test
-test_func = lambda x: 1.5*(x**2) + 1.5*x + 0.5
-uncer = get_uncertainty(test_func, -0.5, 1, 1e-2)
 # %%
 '''
 Make 2d minimizer using the parabolic method.
