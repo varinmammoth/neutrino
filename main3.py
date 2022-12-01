@@ -115,6 +115,39 @@ def minimize1d(func, x0, x1, x2, delta, max_iterations=100):
             return np.array(x_list), np.array(y_list), np.array(three_points)
         elif iteration >= max_iterations:
             return np.array(x_list), np.array(y_list), np.array(three_points)
+
+def minimize2d(func, x_guess, y_guess, delta=1e-14, max_iterations = 50, a=0.1, b=0.1e-4):
+    x_ls_final = [x_guess]
+    y_ls_final = [y_guess]
+    f_ls_final = [func(x_guess,y_guess)]
+
+    parabola_list_x_final = [np.array([x_guess,x_guess+a,x_guess+2*a])]
+    parabola_list_y_final = [np.array([y_guess,x_guess+b,y_guess+2*b])]
+
+    iteration = 0
+    while True:
+        iteration += 1
+
+        func_wrt_x = lambda x: func(x, y_guess)
+        x_ls, placeholder, x_parabola = minimize1d(func_wrt_x, x_guess,x_guess+a,x_guess+2*a, 1e-15)
+        x_guess = x_ls[-1]
+        x_ls_final.append(x_guess)
+        y_ls_final.append(y_guess)
+        f_ls_final.append(func(x_guess, y_guess))
+        parabola_list_x_final.append(np.array([x_guess,x_guess+a,x_guess+2*a]))
+
+        func_wrt_y = lambda y: func(x_guess, y)
+        y_ls, placeholder, y_parabola = minimize1d(func_wrt_y, y_guess,y_guess+b,y_guess+2*b, 1e-15)
+        y_guess = y_ls[-1]
+        x_ls_final.append(x_guess)
+        y_ls_final.append(y_guess)
+        f_ls_final.append(func(x_guess, y_guess))
+        parabola_list_y_final.append(np.array([y_guess,y_guess+b,y_guess+2*b]))
+
+        if iteration > 2 and abs(f_ls_final[-1]-f_ls_final[-2]) < delta:
+            return np.array(x_ls_final), np.array(y_ls_final), np.array(f_ls_final), np.array(parabola_list_x_final), np.array(parabola_list_y_final)
+        elif iteration >= max_iterations:
+            return np.array(x_ls_final), np.array(y_ls_final), np.array(f_ls_final), np.array(parabola_list_x_final), np.array(parabola_list_y_final)
 # %%
 '''
 Task 3.1: Data
@@ -241,5 +274,29 @@ plt.grid()
 plt.xlabel("$θ_{23}$")
 plt.ylabel('NNL')
 plt.legend()
+plt.show()
+# %%
+'''
+Task 4.1: The univariate method
+'''
+NNL_wrt_theta_m = lambda theta, m: NNL(theta, m, bin_centers, count, unoscillated_flux)
+
+theta_ls, m_ls, f_ls, theta_parabola, m_parabola = minimize2d(NNL_wrt_theta_m, 0.5, 2.4e-3)
+theta_ls2, m_ls2, f_ls2, theta_parabola2, m_parabola2 = minimize2d(NNL_wrt_theta_m, 0.5, 2.31e-3)
+
+#Plotting the results
+theta_array = np.linspace(np.pi/4-0.1,np.pi/4+0.1, 500)
+m_array = np.linspace(m_ls[-1]-0.5e-4,m_ls[-1]+1e-4, 500)
+
+THETA_ARRAY, M_ARRAY = np.meshgrid(theta_array, m_array)
+NNL_contour = NNL(THETA_ARRAY, M_ARRAY, bin_centers, count, unoscillated_flux)
+plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
+plt.colorbar()
+plt.quiver(theta_ls[:-1], m_ls[:-1], theta_ls[1:]-theta_ls[:-1], m_ls[1:]-m_ls[:-1], scale_units='xy', angles='xy', scale=1, color='b')
+plt.quiver(theta_ls2[:-1], m_ls2[:-1], theta_ls2[1:]-theta_ls2[:-1], m_ls2[1:]-m_ls2[:-1], scale_units='xy', angles='xy', scale=1, color='g')
+plt.xlabel('Theta')
+plt.ylabel('m')
+plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
+plt.ylim([m_ls[-1]-0.5e-4,m_ls[-1]+1e-4])
 plt.show()
 # %%
