@@ -96,7 +96,7 @@ def lagrange_poly(x, x_data, y_data, n):
 '''
 Make 1D minimizer using the parabolic method.
 '''
-def minimize1d(func, x0, x1, x2, delta, max_iterations=100):
+def minimize1d(func, x0, x1, x2, delta, max_iterations=100, return_parabola_uncertainty=False):
     iteration = 0
 
     points = np.array([x0,x1,x2])
@@ -124,11 +124,31 @@ def minimize1d(func, x0, x1, x2, delta, max_iterations=100):
         y_list.append(np.min(f_points))
 
         iteration += 1
-
+        print(points, f_points)
         if iteration > 2 and abs(y_list[-1] - y_list[-2]) <= delta:
-            return np.array(x_list), np.array(y_list)
+            if return_parabola_uncertainty == True:
+                
+                # parabola = lambda x: lagrange_poly(x, points, f_points, 2)
+                # xmin = x_list[-1]
+                # ymin = y_list[-1]
+                # h = 1e-4
+                # second_derivative = (parabola(xmin+h)+parabola(xmin-h)-2*parabola(xmin))/(h**2)
+                # uncertainty = np.sqrt((2*(0.5-ymin)/second_derivative))
+                return np.array(x_list), np.array(y_list)
+            else:
+                return np.array(x_list), np.array(y_list)
         elif iteration >= max_iterations:
-            return np.array(x_list), np.array(y_list)
+            if return_parabola_uncertainty == True:
+                
+                # parabola = lambda x: lagrange_poly(x, points, f_points, 2)
+                # xmin = x_list[-1]
+                # ymin = y_list[-1]
+                # h = 1e-4
+                # second_derivative = (parabola(xmin+h)+parabola(xmin-h)-2*parabola(xmin))/(h**2)
+                # uncertainty = np.sqrt((2*(0.5-ymin)/second_derivative))
+                return np.array(x_list), np.array(y_list)
+            else:
+                return np.array(x_list), np.array(y_list)
 
 def secant(func, x1, x2):
         while True:
@@ -148,15 +168,6 @@ def get_uncertainty(func, xmin, uncertainty_guess):
 
     return uncer
 
-def get_uncertainty_parabola(func, xmin, uncertainty_guess):
-    x_ls = [xmin, xmin-1e-5, xmin+1e-5]
-    y_ls = [func(xmin), func(xmin-1e-5), func(xmin+1e-5)]
-    uncer_func = lambda x: lagrange_poly(x, x_ls, y_ls, 2) - (func(xmin)+0.5)
-    uncer_plus = secant(uncer_func, xmin+uncertainty_guess, xmin+1.1*uncertainty_guess)
-    uncer_minus = secant(uncer_func, xmin-uncertainty_guess, xmin-1.1*uncertainty_guess)
-    uncer = [uncer_plus-xmin, xmin-uncer_minus]
-
-    return uncer
 #%%
 '''
 Testing the 1d parabolic minimizer
@@ -196,7 +207,7 @@ NNL_wrt_theta = lambda theta: NNL(theta, m, bin_centers, count, unoscillated_flu
 theta0 = 0.5
 theta1 = 0.6
 theta2 = 0.7
-x_list, y_list = minimize1d(NNL_wrt_theta, theta0, theta1, theta2, 1e-15)
+x_list, y_list= minimize1d(NNL_wrt_theta, theta0, theta1, theta2, 1e-15, return_parabola_uncertainty=True)
 #Uncertainty directly from NNL
 uncertainty = get_uncertainty(NNL_wrt_theta, x_list[-1], 0.01)
 print(f'The minimum theta is {x_list[-1]} with uncertainty +- {uncertainty[0]}')
