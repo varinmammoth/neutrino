@@ -225,7 +225,7 @@ def newton2d(func, x_guess, y_guess, a, b, max_iterations=100):
         hessian[0][0] = fds_d2f_dxdx(func, x_guess, y_guess, a)
         hessian[1][1] = fds_d2f_dydy(func, x_guess, y_guess, b)
         hessian[0][1] = fds_d2f_dxdy(func, x_guess, y_guess, a, b)
-        hessian[1][0] = hessian[0][1]
+        hessian[1][0] = fds_d2f_dxdy(func, x_guess, y_guess, a, b)
         print(f'H={hessian}')
 
         inverter = tool.linEq(hessian, [0,0])
@@ -240,7 +240,8 @@ def newton2d(func, x_guess, y_guess, a, b, max_iterations=100):
         grad = np.array([grad_x, grad_y])
         print(f'grad={grad}')
 
-        x_new = x_cur - np.matmul(inverse_hessian, grad)
+        x_new = x_cur - inverse_hessian@grad
+
         x_ls_final.append(x_new[0])
         y_ls_final.append(x_new[1])
         x_guess = x_new[0]
@@ -440,13 +441,28 @@ Task 4.2: Simultaneous method
 
 Try using gradient descent.
 '''
-# NNL_wrt_theta_m = lambda theta, m: NNL(theta, m, bin_centers, count, unoscillated_flux)
-# theta_ls_grad, m_ls_grad, f_ls_grad = grad_2d(NNL_wrt_theta_m, [], 0.7, 2.4e-3, alpha=1e-10, max_iterations=1000)
+def NNL_proper(theta, m):
+    sum = 0
+    for i in range(0,len(unoscillated_flux)):
+        lamb = unoscillated_flux[i]*mu_mu_prob(bin_centers[i],m,theta)
+        sum += lamb - count[i]*np.log(lamb) + np.log(math.factorial(count[i]))
+    return sum
 
-# plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
-# plt.colorbar()
-# plt.quiver(theta_ls_grad[:-1], m_ls_grad[:-1], theta_ls_grad[1:]-theta_ls_grad[:-1], m_ls_grad[1:]-m_ls_grad[:-1], scale_units='xy', angles='xy', scale=1, color='b')
-# plt.xlabel('$θ_{23}$')
-# plt.ylabel('m')
-# plt.show()
+theta_ls_grad, m_ls_grad= newton2d(NNL_proper, 0.85, 2.2e-3, 1e-3, 1e-6)
+theta_ls_grad2, m_ls_grad2= newton2d(NNL_proper, 0.7, 2.2e-3, 1e-3, 1e-6)
+theta_ls_grad3, m_ls_grad3= newton2d(NNL_proper, 0.65, 2.4e-3, 1e-3, 1e-6)
+theta_ls_grad4, m_ls_grad4= newton2d(NNL_proper, 0.9, 2.35e-3, 1e-3, 1e-6)
+
+plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
+plt.colorbar()
+plt.quiver(theta_ls_grad[:-1], m_ls_grad[:-1], theta_ls_grad[1:]-theta_ls_grad[:-1], m_ls_grad[1:]-m_ls_grad[:-1], scale_units='xy', angles='xy', scale=1, color='black')
+plt.quiver(theta_ls_grad2[:-1], m_ls_grad2[:-1], theta_ls_grad2[1:]-theta_ls_grad2[:-1], m_ls_grad2[1:]-m_ls_grad2[:-1], scale_units='xy', angles='xy', scale=1, color='green')
+plt.quiver(theta_ls_grad3[:-1], m_ls_grad3[:-1], theta_ls_grad3[1:]-theta_ls_grad3[:-1], m_ls_grad3[1:]-m_ls_grad3[:-1], scale_units='xy', angles='xy', scale=1, color='blue')
+plt.quiver(theta_ls_grad4[:-1], m_ls_grad4[:-1], theta_ls_grad4[1:]-theta_ls_grad4[:-1], m_ls_grad4[1:]-m_ls_grad4[:-1], scale_units='xy', angles='xy', scale=1, color='orange')
+plt.xlabel('$θ_{23}$')
+plt.ylabel('m')
+plt.show()
+# %%
+
+
 # %%

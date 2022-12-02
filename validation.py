@@ -109,7 +109,7 @@ plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:
 Test of gradient descent
 '''
 plt.figure(figsize=(10, 6), dpi=80)
-plt.subplot(1,2,1)
+plt.subplot(2,2,1)
 x = np.linspace(-5,5,100)
 y = np.linspace(-5,5,100)
 f = lambda x,y: x**2 + y**2 
@@ -122,7 +122,7 @@ plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:
 x_list, y_list, p1 = m.grad_2d(f, [], -2.5, -3, alpha=0.1)
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='g')
 
-plt.subplot(1,2,2)
+plt.subplot(2,2,2)
 x = np.linspace(-np.pi/2,np.pi/2,100)
 y = np.linspace(-np.pi/2,np.pi/2,100)
 f = lambda x,y: np.sin(x)**2 + np.sin(y)**2
@@ -134,20 +134,46 @@ x_list, y_list, p1 = m.grad_2d(f, [], -1.2, 1.3, alpha=0.1)
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='b')
 x_list, y_list, p1 = m.grad_2d(f, [], 1.2, -1.3, alpha=0.1)
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='g')
+
+plt.subplot(2,2,3)
+x = np.linspace(-2,2,100)
+y = np.linspace(-2,2,100)
+f = lambda x,y: -np.exp(-0.5*x*x - 0.25*y*y)
+X, Y = np.meshgrid(x, y)
+F = f(X,Y)
+plt.contourf(X,Y,F,20, cmap='RdGy')
+plt.colorbar()
+x_list, y_list, p1 = m.grad_2d(f, [], -1.2, 1.3, alpha=0.1)
+plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='b')
+x_list, y_list, p1 = m.grad_2d(f, [], 1.2, -1.3, alpha=0.1)
+plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='g')
+
+plt.subplot(2,2,4)
+x = np.linspace(-10,10,100)
+y = np.linspace(-10,10,100)
+f = lambda x,y: x**2 + 2*y**2 + x*y + 3*x
+X, Y = np.meshgrid(x, y)
+F = f(X,Y)
+plt.contourf(X,Y,F,20, cmap='RdGy')
+plt.colorbar()
+x_list, y_list, p1 = m.grad_2d(f, [], -5, -5, alpha=0.1)
+plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='b')
+x_list, y_list, p1 = m.grad_2d(f, [], 5, 5, alpha=0.1)
+plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='g')
 # %%
 '''
 Test of Hessian method
 '''
 plt.figure(figsize=(10, 6), dpi=80)
 plt.subplot(1,2,1)
-x = np.linspace(-5,5,100)
-y = np.linspace(-5,5,100)
-f = lambda x,y: -np.exp(-0.5*x*x-0.5*y*y)
+x = np.linspace(-np.pi/2,np.pi/2,100)
+y = np.linspace(-np.pi/2,np.pi/2,100)
+f = lambda x,y: np.sin(x)**2 + np.sin(y)**2
 X, Y = np.meshgrid(x, y)
 F = f(X,Y)
 plt.contourf(X,Y,F,20, cmap='RdGy')
 plt.colorbar()
-x_list, y_list = m.newton2d(f, 1, 1, 1e-4, 1e-4, max_iterations=20)
+x_list, y_list = m.newton2d(f, -0.8, 0.8, 1e-5, 1e-5, max_iterations=20)
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='b')
 
 # %%
