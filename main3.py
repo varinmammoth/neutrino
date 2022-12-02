@@ -463,6 +463,31 @@ plt.xlabel('$θ_{23}$')
 plt.ylabel('m')
 plt.show()
 # %%
-
+'''
+Now that we found m and theta that minimises NNL, try plotting
+lambda with the new parameters on top of the data histogram.
+'''
+#ideal data
+unoscillated_flux = data['Unoscillated flux']
+plt.plot(bin_centers, unoscillated_flux*mu_mu_prob(bin_centers,m_ls_grad3[-1],theta_ls_grad3[-1]), label='λ', c='r')
+#plt.plot(bin_centers, unoscillated_flux*mu_mu_prob(bin_centers,m_ls_grad4[-1],theta_ls_grad4[-1]), label='λ', c='g')
+plt.bar(bin_centers, count, width=0.05, label='Data')
+plt.xlabel('Energy (GeV)')
+plt.ylabel('µ neutrino count')
+plt.grid()
+plt.legend()
+plt.show()
 
 # %%
+'''
+Task 5: Neutrino Interaction Cross Section
+
+Create a new NNL function that takes into consideration the interaction cross section
+when calculating lambda.
+'''
+def NNL_cross_section(theta, m, a):
+    sum = 0
+    for i in range(0,len(unoscillated_flux)):
+        lamb = unoscillated_flux[i]*mu_mu_prob(bin_centers[i],m,theta)*a*bin_centers[i]
+        sum += lamb - count[i]*np.log(lamb) + np.log(math.factorial(count[i]))
+    return sum
