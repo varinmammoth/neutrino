@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
+import tools as tool
 # %%
 def mu_mu_prob(E, m=2.4e-3, theta=np.pi/4, L=295):
     """Probability of neutrino not oscillating.
@@ -116,7 +117,7 @@ def minimize1d(func, x0, x1, x2, delta, max_iterations=100):
         elif iteration >= max_iterations:
             return np.array(x_list), np.array(y_list), np.array(three_points)
 
-def minimize2d(func, x_guess, y_guess, delta=1e-14, max_iterations = 50, a=0.1, b=0.1e-4):
+def minimize2d(func, x_guess, y_guess, delta=1e-14, max_iterations = 50, a=0.1, b=0.1e-4, starting_direction='x'):
     x_ls_final = [x_guess]
     y_ls_final = [y_guess]
     f_ls_final = [func(x_guess,y_guess)]
@@ -127,27 +128,131 @@ def minimize2d(func, x_guess, y_guess, delta=1e-14, max_iterations = 50, a=0.1, 
     iteration = 0
     while True:
         iteration += 1
+        if starting_direction == 'x':
+            func_wrt_x = lambda x: func(x, y_guess)
+            x_ls, placeholder, x_parabola = minimize1d(func_wrt_x, x_guess,x_guess+a,x_guess+2*a, 1e-15)
+            x_guess = x_ls[-1]
+            x_ls_final.append(x_guess)
+            y_ls_final.append(y_guess)
+            f_ls_final.append(func(x_guess, y_guess))
+            parabola_list_x_final.append(np.array([x_guess,x_guess+a,x_guess+2*a]))
 
-        func_wrt_x = lambda x: func(x, y_guess)
-        x_ls, placeholder, x_parabola = minimize1d(func_wrt_x, x_guess,x_guess+a,x_guess+2*a, 1e-15)
-        x_guess = x_ls[-1]
-        x_ls_final.append(x_guess)
-        y_ls_final.append(y_guess)
-        f_ls_final.append(func(x_guess, y_guess))
-        parabola_list_x_final.append(np.array([x_guess,x_guess+a,x_guess+2*a]))
+            func_wrt_y = lambda y: func(x_guess, y)
+            y_ls, placeholder, y_parabola = minimize1d(func_wrt_y, y_guess,y_guess+b,y_guess+2*b, 1e-15)
+            y_guess = y_ls[-1]
+            x_ls_final.append(x_guess)
+            y_ls_final.append(y_guess)
+            f_ls_final.append(func(x_guess, y_guess))
+            parabola_list_y_final.append(np.array([y_guess,y_guess+b,y_guess+2*b]))
+        else:
+            func_wrt_y = lambda y: func(x_guess, y)
+            y_ls, placeholder, y_parabola = minimize1d(func_wrt_y, y_guess,y_guess+b,y_guess+2*b, 1e-15)
+            y_guess = y_ls[-1]
+            x_ls_final.append(x_guess)
+            y_ls_final.append(y_guess)
+            f_ls_final.append(func(x_guess, y_guess))
+            parabola_list_y_final.append(np.array([y_guess,y_guess+b,y_guess+2*b]))
 
-        func_wrt_y = lambda y: func(x_guess, y)
-        y_ls, placeholder, y_parabola = minimize1d(func_wrt_y, y_guess,y_guess+b,y_guess+2*b, 1e-15)
-        y_guess = y_ls[-1]
-        x_ls_final.append(x_guess)
-        y_ls_final.append(y_guess)
-        f_ls_final.append(func(x_guess, y_guess))
-        parabola_list_y_final.append(np.array([y_guess,y_guess+b,y_guess+2*b]))
+            func_wrt_x = lambda x: func(x, y_guess)
+            x_ls, placeholder, x_parabola = minimize1d(func_wrt_x, x_guess,x_guess+a,x_guess+2*a, 1e-15)
+            x_guess = x_ls[-1]
+            x_ls_final.append(x_guess)
+            y_ls_final.append(y_guess)
+            f_ls_final.append(func(x_guess, y_guess))
+            parabola_list_x_final.append(np.array([x_guess,x_guess+a,x_guess+2*a]))
 
         if iteration > 2 and abs(f_ls_final[-1]-f_ls_final[-2]) < delta:
             return np.array(x_ls_final), np.array(y_ls_final), np.array(f_ls_final), np.array(parabola_list_x_final), np.array(parabola_list_y_final)
         elif iteration >= max_iterations:
             return np.array(x_ls_final), np.array(y_ls_final), np.array(f_ls_final), np.array(parabola_list_x_final), np.array(parabola_list_y_final)
+
+def grad_2d(func, parameters, x_guess, y_guess, alpha=1e-5, h=1e-5, delta=1e-14, max_iterations=100):
+    '''
+    Find minimum using gradient descent.
+    '''
+    x_ls = [x_guess]
+    y_ls = [y_guess]
+    f_ls = [func(x_guess,y_guess,*parameters)]
+
+    iteration = 0
+    while True:
+        xy_cur = np.array([x_ls[-1], y_ls[-1]])
+        x = xy_cur[0]
+        y = xy_cur[1]
+
+        grad_x = (func(x+h,y,*parameters) - func(x,y,*parameters))/h
+        grad_y = (func(x,y+h,*parameters) - func(x,y,*parameters))/h
+        grad = np.array([grad_x, grad_y])
+
+        xy_next = xy_cur - alpha*grad
+
+        x_ls.append(xy_next[0])
+        y_ls.append(xy_next[1])
+        f_ls.append(func(xy_next[0], xy_next[1], *parameters))
+
+        iteration += 1
+
+        if iteration >= max_iterations:
+            return np.array(x_ls), np.array(y_ls), np.array(f_ls)
+        elif np.linalg.norm(xy_cur-xy_next) <= delta:
+            return np.array(x_ls), np.array(y_ls), np.array(f_ls)
+
+def fds_d2f_dxdy(func, x, y, a, b):
+    '''
+    returns d^2f/dxdy using finite difference scheme with step a in x direction
+    and step b in y direction
+    '''
+    return np.float64((func(x+a,y+b)-func(x+a,y-b)-func(x-a,y+b)+func(x-a,y-b))/(4*a*b))
+
+def fds_d2f_dxdx(func, x, y, a):
+    return (func(x+a,y)+func(x-a,y)-2*func(x,y))/(a*a)
+
+def fds_d2f_dydy(func, x, y, b):
+    return (func(x,y+b)+func(x,y-b)-2*func(x,y))/(b*b)
+
+def newton2d(func, x_guess, y_guess, a, b, max_iterations=100):
+
+    x_cur = np.array([x_guess,y_guess])
+    x_ls_final = [x_guess]
+    y_ls_final = [y_guess]
+
+    iteration = 0
+    while True:
+        iteration += 1
+
+        #Generate and invert the Hessian
+        hessian = [[0,0],[0,0]]
+        hessian[0][0] = fds_d2f_dxdx(func, x_guess, y_guess, a)
+        hessian[1][1] = fds_d2f_dydy(func, x_guess, y_guess, b)
+        hessian[0][1] = fds_d2f_dxdy(func, x_guess, y_guess, a, b)
+        hessian[1][0] = hessian[0][1]
+        print(f'H={hessian}')
+
+        inverter = tool.linEq(hessian, [0,0])
+        inverter.invert_A()
+        inverse_hessian = inverter.return_A_inverse()
+        inverse_hessian = np.array(inverse_hessian)
+        print(f'H^-1={inverse_hessian}')
+
+        #Generate the gradient vector
+        grad_x = (func(x_guess+a,y_guess) - func(x_guess,y_guess))/a
+        grad_y = (func(x_guess,y_guess+b) - func(x_guess,y_guess))/b
+        grad = np.array([grad_x, grad_y])
+        print(f'grad={grad}')
+
+        x_new = x_cur - np.matmul(inverse_hessian, grad)
+        x_ls_final.append(x_new[0])
+        y_ls_final.append(x_new[1])
+        x_guess = x_new[0]
+        y_guess = x_new[1]
+
+        x_cur = x_new
+
+        if abs(func(x_ls_final[-1],y_ls_final[-1]) - func(x_ls_final[-2],y_ls_final[-2])) <= 1e-10 and iteration > 2:
+            return np.array(x_ls_final), np.array(y_ls_final)
+        elif iteration >= max_iterations:
+            return np.array(x_ls_final), np.array(y_ls_final)
+
 # %%
 '''
 Task 3.1: Data
@@ -241,6 +346,23 @@ plt.show()
 #     plt.ylim([608, 620])
 #     plt.pause(2)
 #     plt.clf()
+
+#Now, try coming from the right hand side.
+m = 0.0024
+NNL_wrt_theta = lambda theta: NNL(theta, m, bin_centers, count, unoscillated_flux)
+theta0 = 0.8
+theta1 = 0.9
+theta2 = 1
+x_list, y_list, parabola_points= minimize1d(NNL_wrt_theta, theta0, theta1, theta2, 1e-15)
+plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='r')
+plt.plot(np.linspace(0, np.pi/2, 1000), NNL_wrt_theta(np.linspace(0, np.pi/2, 1000)), '--')
+plt.xlim([x_list[-1]-0.1,x_list[-1]+0.1])
+plt.ylim([607.5, 620])
+plt.xlabel("$θ_{23}$")
+plt.ylabel(f'NNL($θ_{23}$, m={m})')
+plt.grid()
+plt.show()
+#It gives the same result.
 # %%
 '''
 Task 3.5: Finding the accuracy of fit result
@@ -281,12 +403,14 @@ Task 4.1: The univariate method
 '''
 NNL_wrt_theta_m = lambda theta, m: NNL(theta, m, bin_centers, count, unoscillated_flux)
 
-theta_ls, m_ls, f_ls, theta_parabola, m_parabola = minimize2d(NNL_wrt_theta_m, 0.5, 2.4e-3)
-theta_ls2, m_ls2, f_ls2, theta_parabola2, m_parabola2 = minimize2d(NNL_wrt_theta_m, 0.5, 2.31e-3)
+theta_ls, m_ls, f_ls, theta_parabola, m_parabola = minimize2d(NNL_wrt_theta_m, 0.7, 2.305e-3, b=1e-6)
+theta_ls2, m_ls2, f_ls2, theta_parabola2, m_parabola2 = minimize2d(NNL_wrt_theta_m, 0.7, 2.4e-3, b=1e-6)
+theta_ls_y, m_ls_y, f_ls_y, theta_parabola_y, m_parabola_y = minimize2d(NNL_wrt_theta_m, 0.7, 2.3e-3, starting_direction='y', b=1e-6)
+theta_ls2_y, m_ls2_y, f_ls2_y, theta_parabola2_y, m_parabola2_y = minimize2d(NNL_wrt_theta_m, 0.85, 2.4e-3, starting_direction='y', b=1e-6)
 
 #Plotting the results
-theta_array = np.linspace(np.pi/4-0.1,np.pi/4+0.1, 500)
-m_array = np.linspace(m_ls[-1]-0.5e-4,m_ls[-1]+1e-4, 500)
+theta_array = np.linspace(np.pi/4-0.2,np.pi/4+0.2, 500)
+m_array = np.linspace(m_ls[-1]-1.5e-4,m_ls[-1]+1.5e-4, 500)
 
 THETA_ARRAY, M_ARRAY = np.meshgrid(theta_array, m_array)
 NNL_contour = NNL(THETA_ARRAY, M_ARRAY, bin_centers, count, unoscillated_flux)
@@ -294,9 +418,35 @@ plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
 plt.colorbar()
 plt.quiver(theta_ls[:-1], m_ls[:-1], theta_ls[1:]-theta_ls[:-1], m_ls[1:]-m_ls[:-1], scale_units='xy', angles='xy', scale=1, color='b')
 plt.quiver(theta_ls2[:-1], m_ls2[:-1], theta_ls2[1:]-theta_ls2[:-1], m_ls2[1:]-m_ls2[:-1], scale_units='xy', angles='xy', scale=1, color='g')
-plt.xlabel('Theta')
+plt.xlabel('$θ_{23}$')
 plt.ylabel('m')
-plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
-plt.ylim([m_ls[-1]-0.5e-4,m_ls[-1]+1e-4])
+# plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
+# plt.ylim([m_ls[-1]-0.5e-4,m_ls[-1]+1e-4])
 plt.show()
+
+plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
+plt.colorbar()
+plt.quiver(theta_ls_y[:-1], m_ls_y[:-1], theta_ls_y[1:]-theta_ls_y[:-1], m_ls_y[1:]-m_ls_y[:-1], scale_units='xy', angles='xy', scale=1, color='b')
+plt.quiver(theta_ls2_y[:-1], m_ls2_y[:-1], theta_ls2_y[1:]-theta_ls2_y[:-1], m_ls2_y[1:]-m_ls2_y[:-1], scale_units='xy', angles='xy', scale=1, color='g')
+plt.xlabel('$θ_{23}$')
+plt.ylabel('m')
+# plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
+# plt.ylim([m_ls[-1]-0.5e-4,m_ls[-1]+1e-4])
+plt.show()
+
+# %%
+'''
+Task 4.2: Simultaneous method
+
+Try using gradient descent.
+'''
+# NNL_wrt_theta_m = lambda theta, m: NNL(theta, m, bin_centers, count, unoscillated_flux)
+# theta_ls_grad, m_ls_grad, f_ls_grad = grad_2d(NNL_wrt_theta_m, [], 0.7, 2.4e-3, alpha=1e-10, max_iterations=1000)
+
+# plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
+# plt.colorbar()
+# plt.quiver(theta_ls_grad[:-1], m_ls_grad[:-1], theta_ls_grad[1:]-theta_ls_grad[:-1], m_ls_grad[1:]-m_ls_grad[:-1], scale_units='xy', angles='xy', scale=1, color='b')
+# plt.xlabel('$θ_{23}$')
+# plt.ylabel('m')
+# plt.show()
 # %%
