@@ -4,7 +4,7 @@ This is a file to test the functions created.
 '''
 import numpy as np
 import matplotlib.pyplot as plt
-import main3 as m
+import main4 as m
 # %%
 '''
 Test of 1d parabolic minimiser.
@@ -162,18 +162,46 @@ x_list, y_list, p1 = m.grad_2d(f, [], 5, 5, alpha=0.1)
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='g')
 # %%
 '''
-Test of Hessian method
+Test of 2d Newton method
 '''
 plt.figure(figsize=(10, 6), dpi=80)
 plt.subplot(1,2,1)
-x = np.linspace(-np.pi/2,np.pi/2,100)
-y = np.linspace(-np.pi/2,np.pi/2,100)
-f = lambda x,y: np.sin(x)**2 + np.sin(y)**2
+x = np.linspace(-10,10,100)
+y = np.linspace(-10,10,100)
+f = lambda x,y: x**2 + 2*y**2 + x*y + 3*x
 X, Y = np.meshgrid(x, y)
 F = f(X,Y)
 plt.contourf(X,Y,F,20, cmap='RdGy')
 plt.colorbar()
-x_list, y_list = m.newton2d(f, -0.8, 0.8, 1e-5, 1e-5, max_iterations=20)
+x_list, y_list = m.newton2d(f, 5, 5, 1e-5, 1e-5, max_iterations=20)
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='b')
 
+# %%
+'''
+Test of 3d gradient descent
+'''
+plt.figure(figsize=(10, 6), dpi=80)
+plt.subplot(1,2,1)
+f = lambda x,y,z: x**2 + y**2 + z**2 + 5
+x_list, y_list, z_list, f_list = m.grad_3d(f, [], 5, 5, 5, alpha=1e-1, delta=1e-3)
+
+plt.plot(f_list, '.')
+plt.xlabel('Iteration')
+plt.ylabel('f')
+plt.grid()
+plt.show()
+# %%
+'''
+Test of 3d Newton method
+'''
+plt.figure(figsize=(10, 6), dpi=80)
+plt.subplot(1,2,1)
+f = lambda x,y,z: x**2 + y**2 + z**2 + 5
+x_list, y_list, z_list = m.newton3d(f, 5, 5, 5, 1e-4, 1e-4, 1e-4)
+
+plt.plot(f(x_list, y_list, z_list), '.')
+plt.xlabel('Iteration')
+plt.ylabel('f')
+plt.grid()
+plt.show()
 # %%
