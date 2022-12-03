@@ -1,4 +1,9 @@
 #%%
+'''
+This is the same code as main3.py. But here, I try to rescale the variables to 
+be in order 1.
+'''
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -18,7 +23,7 @@ def mu_mu_prob(E, m=2.4e-3, theta=np.pi/4, L=295):
         float: Probability of neutrino not oscillating.
     """
     #probability of mu neutrino still being a mu neutrino
-    return 1 - (np.sin(2*theta)*np.sin(1.267*m*L/E))**2
+    return 1 - (np.sin(2*theta)*np.sin(1.267*m*L/(1000*E)))**2
 
 def NNL(theta, m, E_array, count_array, unoscillated_flux_array):
     '''
@@ -320,29 +325,12 @@ count = data['Data to fit']
 
 #ideal data
 unoscillated_flux = data['Unoscillated flux']
-plt.plot(bin_centers, unoscillated_flux*mu_mu_prob(bin_centers), label='λ', c='r')
+plt.plot(bin_centers, unoscillated_flux*mu_mu_prob(bin_centers, 2.4, np.pi/4), label='λ', c='r')
 plt.bar(bin_centers, count, width=0.05, label='Data')
 plt.xlabel('Energy (GeV)')
 plt.ylabel('µ neutrino count')
 plt.grid()
 plt.legend()
-plt.show()
-
-#The probability of no oscillation as a function of energy
-energies = np.linspace(0.025,10,100000)
-plt.subplot(2,1,1)
-plt.plot(energies, mu_mu_prob(energies), c='red')
-plt.ylabel('P(μ→μ)')
-plt.xlim([0.025,10])
-plt.grid()
-
-plt.subplot(2,1,2)
-plt.plot(energies, mu_mu_prob(energies), c='red')
-plt.xlim([0.025,10])
-plt.xlabel('Energy (GeV)')
-plt.ylabel('P(μ→μ)')
-plt.xscale('log')
-plt.grid()
 plt.show()
 # %%
 '''
@@ -351,7 +339,7 @@ Create a function for NNL and plot it.
 Here, a contour plot is shown.
 '''
 theta_array = np.linspace(0, np.pi/2, 100)
-m_array = np.linspace(1e-3, 4e-3, 100)
+m_array = np.linspace(1, 4, 100)
 
 THETA_ARRAY, M_ARRAY = np.meshgrid(theta_array, m_array)
 NNL_contour = NNL(THETA_ARRAY, M_ARRAY, bin_centers, count, unoscillated_flux)
@@ -367,7 +355,7 @@ First, we fix m at 0.0024.
 Then we try to minimise NNL with respect to theta using parabolic method.
 '''
 #Make a new NNL function that takes in only theta as the argument.
-m = 0.0024
+m = 2.4
 NNL_wrt_theta = lambda theta: NNL(theta, m, bin_centers, count, unoscillated_flux)
 theta0 = 0.5
 theta1 = 0.6
@@ -394,7 +382,7 @@ plt.show()
 #     plt.clf()
 
 #Now, try coming from the right hand side.
-m = 0.0024
+m = 2.4
 NNL_wrt_theta = lambda theta: NNL(theta, m, bin_centers, count, unoscillated_flux)
 theta0 = 0.8
 theta1 = 0.9
@@ -449,14 +437,14 @@ Task 4.1: The univariate method
 '''
 NNL_wrt_theta_m = lambda theta, m: NNL(theta, m, bin_centers, count, unoscillated_flux)
 
-theta_ls, m_ls, f_ls, theta_parabola, m_parabola = minimize2d(NNL_wrt_theta_m, 0.7, 2.305e-3, b=1e-6)
-theta_ls2, m_ls2, f_ls2, theta_parabola2, m_parabola2 = minimize2d(NNL_wrt_theta_m, 0.7, 2.4e-3, b=1e-6)
-theta_ls_y, m_ls_y, f_ls_y, theta_parabola_y, m_parabola_y = minimize2d(NNL_wrt_theta_m, 0.7, 2.3e-3, starting_direction='y', b=1e-6)
-theta_ls2_y, m_ls2_y, f_ls2_y, theta_parabola2_y, m_parabola2_y = minimize2d(NNL_wrt_theta_m, 0.85, 2.4e-3, starting_direction='y', b=1e-6)
+theta_ls, m_ls, f_ls, theta_parabola, m_parabola = minimize2d(NNL_wrt_theta_m, 0.7, 2.305, b=1e-6)
+theta_ls2, m_ls2, f_ls2, theta_parabola2, m_parabola2 = minimize2d(NNL_wrt_theta_m, 0.7, 2.4, b=1e-6)
+theta_ls_y, m_ls_y, f_ls_y, theta_parabola_y, m_parabola_y = minimize2d(NNL_wrt_theta_m, 0.7, 2.3, starting_direction='y', b=1e-6)
+theta_ls2_y, m_ls2_y, f_ls2_y, theta_parabola2_y, m_parabola2_y = minimize2d(NNL_wrt_theta_m, 0.85, 2.4, starting_direction='y', b=1e-6)
 
 #Plotting the results
 theta_array = np.linspace(np.pi/4-0.2,np.pi/4+0.2, 500)
-m_array = np.linspace(m_ls[-1]-1.5e-4,m_ls[-1]+1.5e-4, 500)
+m_array = np.linspace(m_ls[-1]-1.5e-1,m_ls[-1]+1.5e-1, 500)
 
 THETA_ARRAY, M_ARRAY = np.meshgrid(theta_array, m_array)
 NNL_contour = NNL(THETA_ARRAY, M_ARRAY, bin_centers, count, unoscillated_flux)
@@ -467,7 +455,7 @@ plt.quiver(theta_ls2[:-1], m_ls2[:-1], theta_ls2[1:]-theta_ls2[:-1], m_ls2[1:]-m
 plt.xlabel('$θ_{23}$')
 plt.ylabel('m')
 # plt.xlim([np.pi/4-0.1,np.pi/4+0.1])
-# plt.ylim([m_ls[-1]-0.5e-4,m_ls[-1]+1e-4])
+# plt.ylim([m_ls[-1]-0.5e-1,m_ls[-1]+1e-1])
 plt.show()
 
 plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
@@ -484,7 +472,7 @@ plt.show()
 '''
 Task 4.2: Simultaneous method
 
-Try using gradient descent.
+Try using Newton's method (Hessian).
 '''
 def NNL_proper(theta, m):
     sum = 0
@@ -493,10 +481,10 @@ def NNL_proper(theta, m):
         sum += lamb - count[i]*np.log(lamb) + np.log(math.factorial(count[i]))
     return sum
 
-theta_ls_grad, m_ls_grad= newton2d(NNL_proper, 0.85, 2.2e-3, 1e-3, 1e-6)
-theta_ls_grad2, m_ls_grad2= newton2d(NNL_proper, 0.7, 2.2e-3, 1e-3, 1e-6)
-theta_ls_grad3, m_ls_grad3= newton2d(NNL_proper, 0.65, 2.4e-3, 1e-3, 1e-6)
-theta_ls_grad4, m_ls_grad4= newton2d(NNL_proper, 0.9, 2.35e-3, 1e-3, 1e-6)
+theta_ls_grad, m_ls_grad= newton2d(NNL_proper, 0.85, 2.2, 1e-6, 1e-6)
+theta_ls_grad2, m_ls_grad2= newton2d(NNL_proper, 0.7, 2.2, 1e-6, 1e-6)
+theta_ls_grad3, m_ls_grad3= newton2d(NNL_proper, 0.65, 2.4, 1e-6, 1e-6)
+theta_ls_grad4, m_ls_grad4= newton2d(NNL_proper, 0.9, 2.35, 1e-6, 1e-6)
 
 plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
 plt.colorbar()
@@ -504,6 +492,24 @@ plt.quiver(theta_ls_grad[:-1], m_ls_grad[:-1], theta_ls_grad[1:]-theta_ls_grad[:
 plt.quiver(theta_ls_grad2[:-1], m_ls_grad2[:-1], theta_ls_grad2[1:]-theta_ls_grad2[:-1], m_ls_grad2[1:]-m_ls_grad2[:-1], scale_units='xy', angles='xy', scale=1, color='green')
 plt.quiver(theta_ls_grad3[:-1], m_ls_grad3[:-1], theta_ls_grad3[1:]-theta_ls_grad3[:-1], m_ls_grad3[1:]-m_ls_grad3[:-1], scale_units='xy', angles='xy', scale=1, color='blue')
 plt.quiver(theta_ls_grad4[:-1], m_ls_grad4[:-1], theta_ls_grad4[1:]-theta_ls_grad4[:-1], m_ls_grad4[1:]-m_ls_grad4[:-1], scale_units='xy', angles='xy', scale=1, color='orange')
+plt.xlabel('$θ_{23}$')
+plt.ylabel('m')
+plt.show()
+#%%
+'''
+Try using gradient descent.
+'''
+theta_ls_grad, m_ls_grad, p= grad_2d(NNL_proper, [], 0.85, 2.2, 1e-4, 1e-6)
+# theta_ls_grad2, m_ls_grad2= grad_2d(NNL_proper, [], 0.7, 2.2, 1e-63 1e-6)
+# theta_ls_grad3, m_ls_grad3= grad_2d(NNL_proper, [], 0.65, 2.4, 1e-3, 1e-6)
+# theta_ls_grad4, m_ls_grad4= grad_2d(NNL_proper, [], 0.9, 2.35, 1e-3, 1e-6)
+
+plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
+plt.colorbar()
+plt.quiver(theta_ls_grad[:-1], m_ls_grad[:-1], theta_ls_grad[1:]-theta_ls_grad[:-1], m_ls_grad[1:]-m_ls_grad[:-1], scale_units='xy', angles='xy', scale=1, color='black')
+# plt.quiver(theta_ls_grad2[:-1], m_ls_grad2[:-1], theta_ls_grad2[1:]-theta_ls_grad2[:-1], m_ls_grad2[1:]-m_ls_grad2[:-1], scale_units='xy', angles='xy', scale=1, color='green')
+# plt.quiver(theta_ls_grad3[:-1], m_ls_grad3[:-1], theta_ls_grad3[1:]-theta_ls_grad3[:-1], m_ls_grad3[1:]-m_ls_grad3[:-1], scale_units='xy', angles='xy', scale=1, color='blue')
+# plt.quiver(theta_ls_grad4[:-1], m_ls_grad4[:-1], theta_ls_grad4[1:]-theta_ls_grad4[:-1], m_ls_grad4[1:]-m_ls_grad4[:-1], scale_units='xy', angles='xy', scale=1, color='orange')
 plt.xlabel('$θ_{23}$')
 plt.ylabel('m')
 plt.show()
