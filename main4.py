@@ -259,6 +259,59 @@ def newton2d(func, x_guess, y_guess, a, b, max_iterations=100):
         elif iteration >= max_iterations:
             return np.array(x_ls_final), np.array(y_ls_final)
 
+def grad_3d(func, parameters, x_guess, y_guess, z_guess, alpha=1e-5, h=1e-5, delta=1e-14, max_iterations=100):
+    '''
+    Find minimum using gradient descent.
+    '''
+    x_ls = [x_guess]
+    y_ls = [y_guess]
+    z_ls = [z_guess]
+    f_ls = [func(x_guess,y_guess,z_guess,*parameters)]
+
+    iteration = 0
+    while True:
+        xy_cur = np.array([x_ls[-1], y_ls[-1], z_ls[-1]])
+        x = xy_cur[0]
+        y = xy_cur[1]
+        z = xy_cur[1]
+
+        grad_x = (func(x+h,y,z,*parameters) - func(x,y,z,*parameters))/h
+        grad_y = (func(x,y+h,z,*parameters) - func(x,y,z,*parameters))/h
+        grad_z = (func(x,y,z+h,*parameters) - func(x,y,z,*parameters))/h
+        grad = np.array([grad_x, grad_y, grad_z])
+
+        xy_next = xy_cur - alpha*grad
+
+        x_ls.append(xy_next[0])
+        y_ls.append(xy_next[1])
+        z_ls.append(xy_next[2])
+        f_ls.append(func(xy_next[0], xy_next[1], xy_next[2], *parameters))
+
+        iteration += 1
+
+        if iteration >= max_iterations:
+            return np.array(x_ls), np.array(y_ls), np.array(z_ls), np.array(f_ls)
+        elif np.linalg.norm(xy_cur-xy_next) <= delta:
+            return np.array(x_ls), np.array(y_ls), np.array(z_ls), np.array(f_ls)
+
+def fds3d_d2f_dxdy(func, x, y, z, a, b):
+    return np.float64((func(x+a,y+b,z)-func(x+a,y-b,z)-func(x-a,y+b,z)+func(x-a,y-b,z))/(4*a*b))
+
+def fds3d_d2f_dxdz(func, x, y, z, a, c):
+    return np.float64((func(x+a,y,z+c)-func(x+a,y,z-c)-func(x-a,y,z+c)+func(x-a,y,z-c))/(4*a*c))
+
+def fds3d_d2f_dydz(func, x, y, z, b, c):
+    return np.float64((func(x,y+b,z+c)-func(x,y+b,z-c)-func(x,y-b,z+c)+func(x,y-b,z-c))/(4*b*c))
+
+def fds3d_d2f_dxdx(func, x, y, z, a):
+    return (func(x+a,y,z)+func(x-a,y,z)-2*func(x,y,z))/(a*a)
+
+def fds3d_d2f_dydy(func, x, y, z, b):
+    return (func(x,y+b,z)+func(x,y-b,z)-2*func(x,y,z))/(b*b)
+
+def fds3d_d2f_dzdz(func, x, y, z, c):
+    return (func(x,y,z+c)+func(x,y,z-c)-2*func(x,y,z))/(c*c)
+
 def newton3d(func, x_guess, y_guess, z_guess, a, b, c, max_iterations=100):
 
     x_cur = np.array([x_guess,y_guess,z_guess])
@@ -271,38 +324,47 @@ def newton3d(func, x_guess, y_guess, z_guess, a, b, c, max_iterations=100):
         iteration += 1
 
         #Generate and invert the Hessian
-        hessian = [[0,0],[0,0]]
-        hessian[0][0] = fds_d2f_dxdx(func, x_guess, y_guess, a)
-        hessian[1][1] = fds_d2f_dydy(func, x_guess, y_guess, b)
-        hessian[0][1] = fds_d2f_dxdy(func, x_guess, y_guess, a, b)
-        hessian[1][0] = fds_d2f_dxdy(func, x_guess, y_guess, a, b)
-        print(f'H={hessian}')
+        hessian = [[0,0,0],[0,0,0],[0,0,0]]
+        hessian[0][0] = fds3d_d2f_dxdx(func, x_guess, y_guess, z_guess, a)
+        hessian[1][1] = fds3d_d2f_dydy(func, x_guess, y_guess, z_guess, b)
+        hessian[2][2] = fds3d_d2f_dzdz(func, x_guess, y_guess, z_guess, c)
+        temp = fds3d_d2f_dxdy(func, x_guess, y_guess, z_guess, a, b)
+        hessian[1][0] = temp
+        hessian[0][1] = temp
+        temp = fds3d_d2f_dxdz(func, x_guess, y_guess, z_guess, a, c)
+        hessian[2][0] = temp
+        hessian[0][2] = temp
+        temp = fds3d_d2f_dydz(func, x_guess, y_guess, z_guess, b, c)
+        hessian[2][1] = temp
+        hessian[1][2] = temp
 
         inverter = tool.linEq(hessian, [0,0])
         inverter.invert_A()
         inverse_hessian = inverter.return_A_inverse()
         inverse_hessian = np.array(inverse_hessian)
-        print(f'H^-1={inverse_hessian}')
 
         #Generate the gradient vector
-        grad_x = (func(x_guess+a,y_guess) - func(x_guess,y_guess))/a
-        grad_y = (func(x_guess,y_guess+b) - func(x_guess,y_guess))/b
-        grad = np.array([grad_x, grad_y])
+        grad_x = (func(x_guess+a,y_guess,z_guess) - func(x_guess,y_guess,z_guess))/a
+        grad_y = (func(x_guess,y_guess+b,z_guess) - func(x_guess,y_guess,z_guess))/b
+        grad_z = (func(x_guess,y_guess,z_guess+c) - func(x_guess,y_guess,z_guess))/c
+        grad = np.array([grad_x, grad_y, grad_z])
         print(f'grad={grad}')
 
         x_new = x_cur - inverse_hessian@grad
 
         x_ls_final.append(x_new[0])
         y_ls_final.append(x_new[1])
+        z_ls_final.append(x_new[2])
         x_guess = x_new[0]
         y_guess = x_new[1]
+        z_guess = x_new[2]
 
         x_cur = x_new
 
-        if abs(func(x_ls_final[-1],y_ls_final[-1]) - func(x_ls_final[-2],y_ls_final[-2])) <= 1e-10 and iteration > 2:
-            return np.array(x_ls_final), np.array(y_ls_final)
+        if abs(func(x_ls_final[-1],y_ls_final[-1],z_ls_final[-1]) - func(x_ls_final[-2],y_ls_final[-2],z_ls_final[-2])) <= 1e-10 and iteration > 2:
+            return np.array(x_ls_final), np.array(y_ls_final), np.array(z_ls_final)
         elif iteration >= max_iterations:
-            return np.array(x_ls_final), np.array(y_ls_final)
+            return np.array(x_ls_final), np.array(y_ls_final), np.array(z_ls_final)
 
 # %%
 '''
@@ -499,17 +561,17 @@ plt.show()
 '''
 Try using gradient descent.
 '''
-theta_ls_grad, m_ls_grad, p= grad_2d(NNL_proper, [], 0.85, 2.2, 1e-4, 1e-6)
-# theta_ls_grad2, m_ls_grad2= grad_2d(NNL_proper, [], 0.7, 2.2, 1e-63 1e-6)
-# theta_ls_grad3, m_ls_grad3= grad_2d(NNL_proper, [], 0.65, 2.4, 1e-3, 1e-6)
-# theta_ls_grad4, m_ls_grad4= grad_2d(NNL_proper, [], 0.9, 2.35, 1e-3, 1e-6)
+theta_ls_grad, m_ls_grad, p = grad_2d(NNL_proper, [], 0.85, 2.2, 1e-4, 1e-6)
+theta_ls_grad2, m_ls_grad2, p = grad_2d(NNL_proper, [], 0.7, 2.2, 1e-4, 1e-6)
+theta_ls_grad3, m_ls_grad3, p = grad_2d(NNL_proper, [], 0.65, 2.4, 1e-4, 1e-6)
+theta_ls_grad4, m_ls_grad4, p = grad_2d(NNL_proper, [], 0.9, 2.35, 1e-4, 1e-6)
 
 plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
 plt.colorbar()
 plt.quiver(theta_ls_grad[:-1], m_ls_grad[:-1], theta_ls_grad[1:]-theta_ls_grad[:-1], m_ls_grad[1:]-m_ls_grad[:-1], scale_units='xy', angles='xy', scale=1, color='black')
-# plt.quiver(theta_ls_grad2[:-1], m_ls_grad2[:-1], theta_ls_grad2[1:]-theta_ls_grad2[:-1], m_ls_grad2[1:]-m_ls_grad2[:-1], scale_units='xy', angles='xy', scale=1, color='green')
-# plt.quiver(theta_ls_grad3[:-1], m_ls_grad3[:-1], theta_ls_grad3[1:]-theta_ls_grad3[:-1], m_ls_grad3[1:]-m_ls_grad3[:-1], scale_units='xy', angles='xy', scale=1, color='blue')
-# plt.quiver(theta_ls_grad4[:-1], m_ls_grad4[:-1], theta_ls_grad4[1:]-theta_ls_grad4[:-1], m_ls_grad4[1:]-m_ls_grad4[:-1], scale_units='xy', angles='xy', scale=1, color='orange')
+plt.quiver(theta_ls_grad2[:-1], m_ls_grad2[:-1], theta_ls_grad2[1:]-theta_ls_grad2[:-1], m_ls_grad2[1:]-m_ls_grad2[:-1], scale_units='xy', angles='xy', scale=1, color='green')
+plt.quiver(theta_ls_grad3[:-1], m_ls_grad3[:-1], theta_ls_grad3[1:]-theta_ls_grad3[:-1], m_ls_grad3[1:]-m_ls_grad3[:-1], scale_units='xy', angles='xy', scale=1, color='blue')
+plt.quiver(theta_ls_grad4[:-1], m_ls_grad4[:-1], theta_ls_grad4[1:]-theta_ls_grad4[:-1], m_ls_grad4[1:]-m_ls_grad4[:-1], scale_units='xy', angles='xy', scale=1, color='orange')
 plt.xlabel('$θ_{23}$')
 plt.ylabel('m')
 plt.show()
@@ -521,7 +583,6 @@ lambda with the new parameters on top of the data histogram.
 #ideal data
 unoscillated_flux = data['Unoscillated flux']
 plt.plot(bin_centers, unoscillated_flux*mu_mu_prob(bin_centers,m_ls_grad3[-1],theta_ls_grad3[-1]), label='λ', c='r')
-#plt.plot(bin_centers, unoscillated_flux*mu_mu_prob(bin_centers,m_ls_grad4[-1],theta_ls_grad4[-1]), label='λ', c='g')
 plt.bar(bin_centers, count, width=0.05, label='Data')
 plt.xlabel('Energy (GeV)')
 plt.ylabel('µ neutrino count')
@@ -536,6 +597,7 @@ Task 5: Neutrino Interaction Cross Section
 Create a new NNL function that takes into consideration the interaction cross section
 when calculating lambda.
 
+Create a 3d gradient descent function.
 And create a 3d Hessian minimization function.
 '''
 def NNL_cross_section(theta, m, a):
