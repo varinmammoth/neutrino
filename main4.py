@@ -606,3 +606,22 @@ def NNL_cross_section(theta, m, a):
         lamb = unoscillated_flux[i]*mu_mu_prob(bin_centers[i],m,theta)*a*bin_centers[i]
         sum += lamb - count[i]*np.log(lamb) + np.log(math.factorial(count[i]))
     return sum
+
+def lambda_cross_section(E, unoscillated_flux, theta, m, a):
+    lamb_ls = []
+    for i in range(0,len(E)):
+        lamb = unoscillated_flux*mu_mu_prob(E,m,theta)*a*E
+    return np.array(lamb_ls)
+
+lambda_guess = lambda_cross_section(np.array(bin_centers), np.array(unoscillated_flux), theta_ls_grad4[:-1], m_ls_grad4[:-1], 1)
+plt.plot(np.array(bin_centers), lambda_guess, label='λ', c='r')
+plt.bar(bin_centers, count, width=0.05, label='Data')
+plt.xlabel('Energy (GeV)')
+plt.ylabel('µ neutrino count')
+plt.grid()
+plt.legend()
+plt.show()
+
+
+# theta_list, m_list, a_list, f_list = grad_3d(NNL_cross_section, [], 5, 5, 5, alpha=1e-1, delta=1e-3)
+# %%
