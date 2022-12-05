@@ -34,7 +34,7 @@ def NNL(theta, m, E_array, count_array, unoscillated_flux_array):
     NNL = 0
     for i in range(0,n):
         lambda_i = mu_mu_prob(E_array[i], m, theta)*unoscillated_flux_array[i]
-        NNL += lambda_i - count_array[i]*np.log(lambda_i) + np.log(math.factorial(count_array[i]))
+        NNL += lambda_i - count_array[i]*np.log(lambda_i) 
         # NNL += lambda_i - count_array[i]*np.log(lambda_i) 
     return NNL
 
@@ -427,7 +427,7 @@ x_list, y_list, parabola_points= minimize1d(NNL_wrt_theta, theta0, theta1, theta
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='r')
 plt.plot(np.linspace(0, np.pi/2, 1000), NNL_wrt_theta(np.linspace(0, np.pi/2, 1000)), '--')
 plt.xlim([x_list[-1]-0.1,x_list[-1]+0.1])
-plt.ylim([607.5, 620])
+plt.ylim([85,100])
 plt.xlabel("$θ_{23}$")
 plt.ylabel(f'NNL(theta, m={m})')
 plt.grid()
@@ -453,7 +453,7 @@ x_list, y_list, parabola_points= minimize1d(NNL_wrt_theta, theta0, theta1, theta
 plt.quiver(x_list[:-1], y_list[:-1], x_list[1:]-x_list[:-1], y_list[1:]-y_list[:-1], scale_units='xy', angles='xy', scale=1, color='r')
 plt.plot(np.linspace(0, np.pi/2, 1000), NNL_wrt_theta(np.linspace(0, np.pi/2, 1000)), '--')
 plt.xlim([x_list[-1]-0.1,x_list[-1]+0.1])
-plt.ylim([607.5, 620])
+plt.ylim([85,100])
 plt.xlabel("$θ_{23}$")
 plt.ylabel(f'NNL($θ_{23}$, m={m})')
 plt.grid()
@@ -604,13 +604,14 @@ def NNL_cross_section(theta, m, a):
     sum = 0
     for i in range(0,len(unoscillated_flux)):
         lamb = unoscillated_flux[i]*mu_mu_prob(bin_centers[i],m,theta)*a*bin_centers[i]
-        sum += lamb - count[i]*np.log(lamb) + np.log(math.factorial(count[i]))
+        sum += lamb - count[i]*np.log(lamb) 
     return sum
 
+c = []
 def lambda_cross_section(E, unoscillated_flux, theta, m, a):
     lamb_ls = []
     for i in range(0,len(E)):
-        lamb = unoscillated_flux[i]*mu_mu_prob(E[i],m,theta)*a*E[i]
+        lamb = unoscillated_flux[i]*mu_mu_prob(E[i],m,theta)*(a)*E[i]
         lamb_ls.append(lamb)
     return np.array(lamb_ls)
 
@@ -623,14 +624,27 @@ plt.grid()
 plt.legend()
 plt.show()
 
+# theta_array = np.linspace(0, np.pi/2,100)
+# a_array = np.linspace(0.1,5,100)
+# THETA_ARRAY, A_ARRAY = np.meshgrid(theta_array, a_array)
+# y = lambda theta, a: NNL_cross_section(theta, 2.4, a)
+# NNL_contour = y(THETA_ARRAY, A_ARRAY)
+# plt.contourf(THETA_ARRAY, A_ARRAY, NNL_contour, 20, cmap='RdGy')
+# plt.colorbar()
+
+theta_list, m_list, a_list, f_list = grad_3d(NNL_cross_section, [], 0.7, 2.3, 2, alpha=1e-5, delta=1e-6, max_iterations=1000)
+# theta_list, m_list, a_list = newton3d(NNL_cross_section, 1, 2.5, 2, 1e-6, 1e-6, 1e-6, max_iterations=100)
+# %%
+func = lambda theta, a: NNL_cross_section(theta, 2.42922, a)
+theta_ls, a_ls, f_ls = grad_2d(func, [], 1.2, 2, alpha=1e-4, max_iterations=100)
+
 theta_array = np.linspace(0, np.pi/2,100)
 a_array = np.linspace(0.1,5,100)
 THETA_ARRAY, A_ARRAY = np.meshgrid(theta_array, a_array)
-y = lambda theta, a: NNL_cross_section(theta, 2.4, a)
+y = lambda theta, a: NNL_cross_section(theta, 2.42922, a)
 NNL_contour = y(THETA_ARRAY, A_ARRAY)
 plt.contourf(THETA_ARRAY, A_ARRAY, NNL_contour, 20, cmap='RdGy')
+plt.quiver(theta_ls[:-1], a_ls[:-1], theta_ls[1:]-theta_ls[:-1], a_ls[1:]-a_ls[:-1], scale_units='xy', angles='xy', scale=1, color='orange')
 plt.colorbar()
-
-# theta_list, m_list, a_list, f_list = grad_3d(NNL_cross_section, [], 0.7, 2.3, 2, alpha=1e-6, delta=1e-8, max_iterations=1000)
-# theta_list, m_list, a_list = newton3d(NNL_cross_section, 1, 2.5, 2, 1e-6, 1e-6, 1e-6, max_iterations=1000)
+plt.show()
 # %%

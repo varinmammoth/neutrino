@@ -4,7 +4,7 @@ This is a file to test the functions created.
 '''
 import numpy as np
 import matplotlib.pyplot as plt
-import main4 as m
+import main5 as m
 # %%
 '''
 Test of 1d parabolic minimiser.
@@ -196,10 +196,18 @@ Test of 3d Newton method
 '''
 plt.figure(figsize=(10, 6), dpi=80)
 plt.subplot(1,2,1)
-f = lambda x,y,z: x**2 + y**2 + z**2 + 5
+f = lambda x,y,z: (x-5)*(x-3) + (y-3)**2 + (z-3)**2 
 x_list, y_list, z_list = m.newton3d(f, 5, 5, 5, 1e-4, 1e-4, 1e-4)
 
 plt.plot(f(x_list, y_list, z_list), '.')
+plt.xlabel('Iteration')
+plt.ylabel('f')
+plt.grid()
+plt.show()
+
+x_list, y_list, z_list, f_list = m.grad_3d(f, [], 5, 5, 5, alpha=1e-2, delta=1e-5, max_iterations=500)
+
+plt.plot(f_list, '.')
 plt.xlabel('Iteration')
 plt.ylabel('f')
 plt.grid()
