@@ -199,7 +199,7 @@ def grad_2d(func, parameters, x_guess, y_guess, alpha=1e-5, h=1e-5, delta=1e-14,
 
         if iteration >= max_iterations:
             return np.array(x_ls), np.array(y_ls), np.array(f_ls)
-        elif np.linalg.norm(xy_cur-xy_next) <= delta:
+        elif iteration > 2 and abs(f_ls[-1] - f_ls[-2]) <= delta:
             return np.array(x_ls), np.array(y_ls), np.array(f_ls)
 
 def fds_d2f_dxdy(func, x, y, a, b):
@@ -273,7 +273,7 @@ def grad_3d(func, parameters, x_guess, y_guess, z_guess, alpha=1e-5, h=1e-5, del
         xy_cur = np.array([x_ls[-1], y_ls[-1], z_ls[-1]])
         x = xy_cur[0]
         y = xy_cur[1]
-        z = xy_cur[1]
+        z = xy_cur[2]
 
         grad_x = (func(x+h,y,z,*parameters) - func(x,y,z,*parameters))/h
         grad_y = (func(x,y+h,z,*parameters) - func(x,y,z,*parameters))/h
@@ -291,7 +291,7 @@ def grad_3d(func, parameters, x_guess, y_guess, z_guess, alpha=1e-5, h=1e-5, del
 
         if iteration >= max_iterations:
             return np.array(x_ls), np.array(y_ls), np.array(z_ls), np.array(f_ls)
-        elif np.linalg.norm(xy_cur-xy_next) <= delta:
+        elif iteration > 2 and abs(f_ls[-1] - f_ls[-2]) <= delta:
             return np.array(x_ls), np.array(y_ls), np.array(z_ls), np.array(f_ls)
 
 def fds3d_d2f_dxdy(func, x, y, z, a, b):
@@ -615,7 +615,7 @@ def lambda_cross_section(E, unoscillated_flux, theta, m, a):
         lamb_ls.append(lamb)
     return np.array(lamb_ls)
 
-lambda_guess = lambda_cross_section(np.array(bin_centers), np.array(unoscillated_flux), theta_ls_grad4[-1], m_ls_grad4[-1], 1.25)
+lambda_guess = lambda_cross_section(np.array(bin_centers), np.array(unoscillated_flux), theta_ls_grad4[-1], m_ls_grad4[-1], 1.2413)
 plt.plot(np.array(bin_centers), lambda_guess, label='λ', c='r')
 plt.bar(bin_centers, count, width=0.05, label='Data')
 plt.xlabel('Energy (GeV)')
@@ -623,7 +623,7 @@ plt.ylabel('µ neutrino count')
 plt.grid()
 plt.legend()
 plt.show()
-
+#%%
 # theta_array = np.linspace(0, np.pi/2,100)
 # a_array = np.linspace(0.1,5,100)
 # THETA_ARRAY, A_ARRAY = np.meshgrid(theta_array, a_array)
@@ -632,19 +632,41 @@ plt.show()
 # plt.contourf(THETA_ARRAY, A_ARRAY, NNL_contour, 20, cmap='RdGy')
 # plt.colorbar()
 
-theta_list, m_list, a_list, f_list = grad_3d(NNL_cross_section, [], 0.7, 2.3, 2, alpha=1e-5, delta=1e-6, max_iterations=1000)
-# theta_list, m_list, a_list = newton3d(NNL_cross_section, 1, 2.5, 2, 1e-6, 1e-6, 1e-6, max_iterations=100)
-# %%
-func = lambda theta, a: NNL_cross_section(theta, 2.42922, a)
-theta_ls, a_ls, f_ls = grad_2d(func, [], 1.2, 2, alpha=1e-4, max_iterations=100)
+theta_list, m_list, a_list, f_list = grad_3d(NNL_cross_section, [], 0.7, 2.4, 2, alpha=1e-4, delta=1e-6, max_iterations=300)
+theta_list2, m_list2, a_list2, f_list2 = grad_3d(NNL_cross_section, [], 0.9, 2.4, 2, alpha=1e-4, delta=1e-6, max_iterations=300)
 
-theta_array = np.linspace(0, np.pi/2,100)
-a_array = np.linspace(0.1,5,100)
-THETA_ARRAY, A_ARRAY = np.meshgrid(theta_array, a_array)
-y = lambda theta, a: NNL_cross_section(theta, 2.42922, a)
-NNL_contour = y(THETA_ARRAY, A_ARRAY)
-plt.contourf(THETA_ARRAY, A_ARRAY, NNL_contour, 20, cmap='RdGy')
-plt.quiver(theta_ls[:-1], a_ls[:-1], theta_ls[1:]-theta_ls[:-1], a_ls[1:]-a_ls[:-1], scale_units='xy', angles='xy', scale=1, color='orange')
-plt.colorbar()
+#%%
+plt.plot(theta_list, c='red', label='(0.7, 2.4, 2.0)')
+plt.plot(theta_list2, c='g', label='(0.9, 2.4, 2.0)')
+legend = plt.legend()
+legend.set_title('Starting points')
+plt.xlabel('Iteration')
+plt.ylabel('$θ_{23}$')
 plt.show()
+
+plt.plot(m_list, c='red', label='(0.7, 2.4, 2.0)')
+plt.plot(m_list2, c='g', label='(0.9, 2.4, 2.0)')
+legend = plt.legend()
+legend.set_title('Starting points')
+plt.xlabel('Iteration')
+plt.ylabel('m')
+plt.show()
+
+plt.plot(a_list, c='red', label='(0.7, 2.4, 2.0)')
+plt.plot(a_list2, c='g', label='(0.9, 2.4, 2.0)')
+legend = plt.legend()
+legend.set_title('Starting points')
+plt.xlabel('Iteration')
+plt.ylabel('a')
+plt.show()
+
+plt.plot(f_list, c='red', label='(0.7, 2.4, 2.0)')
+plt.plot(f_list2, c='g', label='(0.7, 2.4, 2.0)')
+legend = plt.legend()
+legend.set_title('Starting points')
+plt.xlabel('Iteration')
+plt.ylabel('NNL')
+plt.show()
+# %%
+
 # %%
