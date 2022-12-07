@@ -361,7 +361,7 @@ def newton3d(func, x_guess, y_guess, z_guess, a, b, c, max_iterations=100):
 
         x_cur = x_new
 
-        if abs(func(x_ls_final[-1],y_ls_final[-1],z_ls_final[-1]) - func(x_ls_final[-2],y_ls_final[-2],z_ls_final[-2])) <= 1e-10 and iteration > 2:
+        if iteration > 2 and abs(func(x_ls_final[-1],y_ls_final[-1],z_ls_final[-1]) - func(x_ls_final[-2],y_ls_final[-2],z_ls_final[-2])) <= 1e-10:
             return np.array(x_ls_final), np.array(y_ls_final), np.array(z_ls_final)
         elif iteration >= max_iterations:
             return np.array(x_ls_final), np.array(y_ls_final), np.array(z_ls_final)
@@ -505,7 +505,7 @@ NNL_wrt_m = lambda m: NNL(theta_ls[-1], m, bin_centers, count, unoscillated_flux
 uncertainty_NNL_theta = get_uncertainty(NNL_wrt_theta, theta_ls[-1], 0.05)
 uncertainty_NNL_m = get_uncertainty(NNL_wrt_m, m_ls[-1], 0.05)
 
-theta_ls2, m_ls2, f_ls2, theta_parabola2, m_parabola2 = minimize2d(NNL_wrt_theta_m, 0.7, 2.4, b=1e-6)
+theta_ls2, m_ls2, f_ls2, theta_parabola2, m_parabola2 = minimize2d(NNL_wrt_theta_m, 0.9, 2.4, b=1e-6)
 NNL_wrt_theta = lambda theta: NNL(theta, m_ls2[-1], bin_centers, count, unoscillated_flux)
 NNL_wrt_m = lambda m: NNL(theta_ls2[-1], m, bin_centers, count, unoscillated_flux)
 uncertainty_NNL_theta2 = get_uncertainty(NNL_wrt_theta, theta_ls2[-1], 0.05)
@@ -517,11 +517,13 @@ NNL_wrt_m = lambda m: NNL(theta_ls_y[-1], m, bin_centers, count, unoscillated_fl
 uncertainty_NNL_theta_y = get_uncertainty(NNL_wrt_theta, theta_ls_y[-1], 0.05)
 uncertainty_NNL_m_y = get_uncertainty(NNL_wrt_m, m_ls_y[-1], 0.05)
 
-theta_ls2_y, m_ls2_y, f_ls2_y, theta_parabola2_y, m_parabola2_y = minimize2d(NNL_wrt_theta_m, 0.7, 2.4, starting_direction='y', b=1e-6)
+theta_ls2_y, m_ls2_y, f_ls2_y, theta_parabola2_y, m_parabola2_y = minimize2d(NNL_wrt_theta_m, 0.9, 2.4, starting_direction='y', b=1e-6)
 NNL_wrt_theta = lambda theta: NNL(theta, m_ls[-1], bin_centers, count, unoscillated_flux)
 NNL_wrt_m = lambda m: NNL(theta_ls[-1], m, bin_centers, count, unoscillated_flux)
 uncertainty_NNL_theta2_y = get_uncertainty(NNL_wrt_theta, theta_ls2_y[-1], 0.05)
 uncertainty_NNL_m2_y = get_uncertainty(NNL_wrt_m, m_ls2_y[-1], 0.05)
+
+theta_uni_plot, m_uni_plot = theta_ls2_y, m_ls2_y
 
 #Plotting the results
 theta_array = np.linspace(np.pi/4-0.2,np.pi/4+0.2, 500)
@@ -562,17 +564,19 @@ def NNL_proper(theta, m):
         sum += lamb - count[i]*np.log(lamb) + np.log(math.factorial(count[i]))
     return sum
 
-theta_ls_grad, m_ls_grad= newton2d(NNL_proper, 0.85, 2.2, 1e-6, 1e-6)
-theta_ls_grad2, m_ls_grad2= newton2d(NNL_proper, 0.7, 2.2, 1e-6, 1e-6)
-theta_ls_grad3, m_ls_grad3= newton2d(NNL_proper, 0.65, 2.4, 1e-6, 1e-6)
-theta_ls_grad4, m_ls_grad4= newton2d(NNL_proper, 0.9, 2.35, 1e-6, 1e-6)
+theta_ls_newton, m_ls_newton= newton2d(NNL_proper, 0.7, 2.2, 1e-6, 1e-6)
+theta_ls_newton2, m_ls_newton2= newton2d(NNL_proper, 0.7, 2.4, 1e-6, 1e-6)
+theta_ls_newton3, m_ls_newton3= newton2d(NNL_proper, 0.9, 2.2, 1e-6, 1e-6)
+theta_ls_newton4, m_ls_newton4= newton2d(NNL_proper, 0.9, 2.4, 1e-6, 1e-6)
+
+theta_newton_plot, m_newton_plot = theta_ls_newton4, m_ls_newton4
 
 plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
 plt.colorbar()
-plt.quiver(theta_ls_grad[:-1], m_ls_grad[:-1], theta_ls_grad[1:]-theta_ls_grad[:-1], m_ls_grad[1:]-m_ls_grad[:-1], scale_units='xy', angles='xy', scale=1, color='black')
-plt.quiver(theta_ls_grad2[:-1], m_ls_grad2[:-1], theta_ls_grad2[1:]-theta_ls_grad2[:-1], m_ls_grad2[1:]-m_ls_grad2[:-1], scale_units='xy', angles='xy', scale=1, color='green')
-plt.quiver(theta_ls_grad3[:-1], m_ls_grad3[:-1], theta_ls_grad3[1:]-theta_ls_grad3[:-1], m_ls_grad3[1:]-m_ls_grad3[:-1], scale_units='xy', angles='xy', scale=1, color='blue')
-plt.quiver(theta_ls_grad4[:-1], m_ls_grad4[:-1], theta_ls_grad4[1:]-theta_ls_grad4[:-1], m_ls_grad4[1:]-m_ls_grad4[:-1], scale_units='xy', angles='xy', scale=1, color='orange')
+plt.quiver(theta_ls_newton[:-1], m_ls_newton[:-1], theta_ls_newton[1:]-theta_ls_newton[:-1], m_ls_newton[1:]-m_ls_newton[:-1], scale_units='xy', angles='xy', scale=1, color='black')
+plt.quiver(theta_ls_newton2[:-1], m_ls_newton2[:-1], theta_ls_newton2[1:]-theta_ls_newton2[:-1], m_ls_newton2[1:]-m_ls_newton2[:-1], scale_units='xy', angles='xy', scale=1, color='green')
+plt.quiver(theta_ls_newton3[:-1], m_ls_newton3[:-1], theta_ls_newton3[1:]-theta_ls_newton3[:-1], m_ls_newton3[1:]-m_ls_newton3[:-1], scale_units='xy', angles='xy', scale=1, color='blue')
+plt.quiver(theta_ls_newton4[:-1], m_ls_newton4[:-1], theta_ls_newton4[1:]-theta_ls_newton4[:-1], m_ls_newton4[1:]-m_ls_newton4[:-1], scale_units='xy', angles='xy', scale=1, color='orange')
 plt.xlabel('$θ_{23}$')
 plt.ylabel('m')
 plt.show()
@@ -580,10 +584,12 @@ plt.show()
 '''
 Try using gradient descent.
 '''
-theta_ls_grad, m_ls_grad, p = grad_2d(NNL_proper, [], 0.85, 2.2, 1e-4, 1e-6)
+theta_ls_grad, m_ls_grad, p = grad_2d(NNL_proper, [], 0.7, 2.4, 1e-4, 1e-6)
 theta_ls_grad2, m_ls_grad2, p = grad_2d(NNL_proper, [], 0.7, 2.2, 1e-4, 1e-6)
-theta_ls_grad3, m_ls_grad3, p = grad_2d(NNL_proper, [], 0.65, 2.4, 1e-4, 1e-6)
-theta_ls_grad4, m_ls_grad4, p = grad_2d(NNL_proper, [], 0.9, 2.35, 1e-4, 1e-6)
+theta_ls_grad3, m_ls_grad3, p = grad_2d(NNL_proper, [], 0.9, 2.4, 1e-4, 1e-6)
+theta_ls_grad4, m_ls_grad4, p = grad_2d(NNL_proper, [], 0.9, 2.2, 1e-4, 1e-6)
+
+theta_grad_plot, m_grad_plot = theta_ls_grad3, m_ls_grad3
 
 plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
 plt.colorbar()
@@ -643,17 +649,13 @@ plt.grid()
 plt.legend()
 plt.show()
 #%%
-# theta_array = np.linspace(0, np.pi/2,100)
-# a_array = np.linspace(0.1,5,100)
-# THETA_ARRAY, A_ARRAY = np.meshgrid(theta_array, a_array)
-# y = lambda theta, a: NNL_cross_section(theta, 2.4, a)
-# NNL_contour = y(THETA_ARRAY, A_ARRAY)
-# plt.contourf(THETA_ARRAY, A_ARRAY, NNL_contour, 20, cmap='RdGy')
-# plt.colorbar()
-
+###Using gradient descent
 theta_list, m_list, a_list, f_list = grad_3d(NNL_cross_section, [], 0.7, 2.4, 2, alpha=1e-4, delta=1e-6, max_iterations=300)
 theta_list2, m_list2, a_list2, f_list2 = grad_3d(NNL_cross_section, [], 0.9, 2.4, 2, alpha=1e-4, delta=1e-6, max_iterations=300)
-
+#%%
+#Using Hessian
+# theta_list, m_list, a_list, f_list = newton3d(NNL_cross_section, 0.7, 2.4, 2, a=1e-5, b=1e-5, c=1e-5, max_iterations=100)
+# theta_list2, m_list2, a_list2, f_list2 = newton3d(NNL_cross_section, 0.9, 2.4, 2, a=1e-5, b=1e-5, c=1e-5, max_iterations=100)
 #%%
 plt.plot(theta_list, c='red', label='(0.7, 2.4, 2.0)')
 plt.plot(theta_list2, c='g', label='(0.9, 2.4, 2.0)')
@@ -696,5 +698,18 @@ plt.grid()
 plt.legend()
 plt.show()
 # %%
+'''
+Making a final summary plot of all the methods, for 2d
+'''
+
+plt.contourf(THETA_ARRAY, M_ARRAY, NNL_contour, 20, cmap='RdGy')
+plt.colorbar()
+plt.quiver(theta_uni_plot[:-1], m_uni_plot[:-1], theta_uni_plot[1:]-theta_uni_plot[:-1], m_uni_plot[1:]-m_uni_plot[:-1], scale_units='xy', angles='xy', scale=1, color='blue', label='Univariate')
+plt.quiver(theta_newton_plot[:-1], m_newton_plot[:-1], theta_newton_plot[1:]-theta_newton_plot[:-1], m_newton_plot[1:]-m_newton_plot[:-1], scale_units='xy', angles='xy', scale=1, color='g', label="Newton's")
+plt.quiver(theta_grad_plot[:-1], m_grad_plot[:-1], theta_grad_plot[1:]-theta_grad_plot[:-1], m_grad_plot[1:]-m_grad_plot[:-1], scale_units='xy', angles='xy', scale=1, color='black', label='Grad. des.')
+plt.legend()
+plt.xlabel('$θ_{23}$')
+plt.ylabel('m')
+plt.show()
 
 # %%
