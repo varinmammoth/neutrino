@@ -344,9 +344,9 @@ def newton3d(func, x_guess, y_guess, z_guess, a, b, c, max_iterations=100):
         inverse_hessian = np.array(inverse_hessian)
 
         #Generate the gradient vector
-        grad_x = (func(x_guess+a,y_guess,z_guess) - func(x_guess,y_guess,z_guess))/a
-        grad_y = (func(x_guess,y_guess+b,z_guess) - func(x_guess,y_guess,z_guess))/b
-        grad_z = (func(x_guess,y_guess,z_guess+c) - func(x_guess,y_guess,z_guess))/c
+        grad_x = (func(x_guess+a,y_guess,z_guess) - func(x_guess-a,y_guess,z_guess))/(2*a)
+        grad_y = (func(x_guess,y_guess+b,z_guess) - func(x_guess,y_guess-b,z_guess))/(2*b)
+        grad_z = (func(x_guess,y_guess,z_guess+c) - func(x_guess,y_guess,z_guess-c))/(2*c)
         grad = np.array([grad_x, grad_y, grad_z])
         print(f'grad={grad}')
 
@@ -654,8 +654,8 @@ theta_list, m_list, a_list, f_list = grad_3d(NNL_cross_section, [], 0.7, 2.4, 2,
 theta_list2, m_list2, a_list2, f_list2 = grad_3d(NNL_cross_section, [], 0.9, 2.4, 2, alpha=1e-4, delta=1e-6, max_iterations=300)
 #%%
 #Using Hessian
-# theta_list, m_list, a_list, f_list = newton3d(NNL_cross_section, 0.7, 2.4, 2, a=1e-5, b=1e-5, c=1e-5, max_iterations=100)
-# theta_list2, m_list2, a_list2, f_list2 = newton3d(NNL_cross_section, 0.9, 2.4, 2, a=1e-5, b=1e-5, c=1e-5, max_iterations=100)
+theta_list, m_list, a_list, f_list = newton3d(NNL_cross_section, 0.7, 2.4, 2, a=1e-9, b=1e-9, c=1e-9, max_iterations=100)
+theta_list2, m_list2, a_list2, f_list2 = newton3d(NNL_cross_section, 0.9, 2.4, 2, a=1e-9, b=1e-9, c=1e-9, max_iterations=100)
 #%%
 plt.plot(theta_list, c='red', label='(0.7, 2.4, 2.0)')
 plt.plot(theta_list2, c='g', label='(0.9, 2.4, 2.0)')
