@@ -499,15 +499,29 @@ Task 4.1: The univariate method
 '''
 NNL_wrt_theta_m = lambda theta, m: NNL(theta, m, bin_centers, count, unoscillated_flux)
 
-theta_ls, m_ls, f_ls, theta_parabola, m_parabola = minimize2d(NNL_wrt_theta_m, 0.7, 2.305, b=1e-6)
+theta_ls, m_ls, f_ls, theta_parabola, m_parabola = minimize2d(NNL_wrt_theta_m, 0.7, 2.3, b=1e-6)
 NNL_wrt_theta = lambda theta: NNL(theta, m_ls[-1], bin_centers, count, unoscillated_flux)
 NNL_wrt_m = lambda m: NNL(theta_ls[-1], m, bin_centers, count, unoscillated_flux)
 uncertainty_NNL_theta = get_uncertainty(NNL_wrt_theta, theta_ls[-1], 0.05)
 uncertainty_NNL_m = get_uncertainty(NNL_wrt_m, m_ls[-1], 0.05)
 
 theta_ls2, m_ls2, f_ls2, theta_parabola2, m_parabola2 = minimize2d(NNL_wrt_theta_m, 0.7, 2.4, b=1e-6)
+NNL_wrt_theta = lambda theta: NNL(theta, m_ls2[-1], bin_centers, count, unoscillated_flux)
+NNL_wrt_m = lambda m: NNL(theta_ls2[-1], m, bin_centers, count, unoscillated_flux)
+uncertainty_NNL_theta2 = get_uncertainty(NNL_wrt_theta, theta_ls2[-1], 0.05)
+uncertainty_NNL_m2 = get_uncertainty(NNL_wrt_m, m_ls2[-1], 0.05)
+
 theta_ls_y, m_ls_y, f_ls_y, theta_parabola_y, m_parabola_y = minimize2d(NNL_wrt_theta_m, 0.7, 2.3, starting_direction='y', b=1e-6)
-theta_ls2_y, m_ls2_y, f_ls2_y, theta_parabola2_y, m_parabola2_y = minimize2d(NNL_wrt_theta_m, 0.85, 2.4, starting_direction='y', b=1e-6)
+NNL_wrt_theta = lambda theta: NNL(theta, m_ls_y[-1], bin_centers, count, unoscillated_flux)
+NNL_wrt_m = lambda m: NNL(theta_ls_y[-1], m, bin_centers, count, unoscillated_flux)
+uncertainty_NNL_theta_y = get_uncertainty(NNL_wrt_theta, theta_ls_y[-1], 0.05)
+uncertainty_NNL_m_y = get_uncertainty(NNL_wrt_m, m_ls_y[-1], 0.05)
+
+theta_ls2_y, m_ls2_y, f_ls2_y, theta_parabola2_y, m_parabola2_y = minimize2d(NNL_wrt_theta_m, 0.7, 2.4, starting_direction='y', b=1e-6)
+NNL_wrt_theta = lambda theta: NNL(theta, m_ls[-1], bin_centers, count, unoscillated_flux)
+NNL_wrt_m = lambda m: NNL(theta_ls[-1], m, bin_centers, count, unoscillated_flux)
+uncertainty_NNL_theta2_y = get_uncertainty(NNL_wrt_theta, theta_ls2_y[-1], 0.05)
+uncertainty_NNL_m2_y = get_uncertainty(NNL_wrt_m, m_ls2_y[-1], 0.05)
 
 #Plotting the results
 theta_array = np.linspace(np.pi/4-0.2,np.pi/4+0.2, 500)
